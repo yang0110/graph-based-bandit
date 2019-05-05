@@ -1,2 +1,1 @@
-# graph-based-bandit
-algorithms for graph-based bandit
+# Graph-Bandit
