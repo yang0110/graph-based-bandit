@@ -3,7 +3,7 @@ from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.preprocessing import Normalizer, MinMaxScaler
 from scipy.sparse import csgraph 
 import scipy
-import os 
+
 
 class GOB():
 	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, lap, alpha, delta, sigma, beta):

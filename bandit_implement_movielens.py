@@ -22,6 +22,9 @@ rate_matrix=np.load(input_path+'rating_matrix_30_user_100_movies.npy')
 true_payoffs=rate_matrix/np.max(rate_matrix)
 user_feature_matrix=np.load(input_path+'user_feature_matrix_30.npy')
 item_feature_matrix=np.load(input_path+'item_feature_matrix_100.npy')
+user_feature_matrix=Normalizer().fit_transform(user_feature_matrix)
+item_feature_matrix=Normalizer().fit_transform(item_feature_matrix)
+
 
 user_num=true_payoffs.shape[0]
 dimension=item_feature_matrix.shape[1]

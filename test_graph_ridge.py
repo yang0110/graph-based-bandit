@@ -9,12 +9,12 @@ os.chdir('C:/Kaige_Research/Code/graph_bandit/code/')
 from utils import *
 path='../results/'
 
-user_num=20
+user_num=10
 dimension=10
 item_num=100
 iteration=1000
 alpha=0.1
-sigma=0.5
+sigma=0.1
 
 adj=RBF_graph(user_num, dimension, thres=0)
 lap1=csgraph.laplacian(adj, normed=True)

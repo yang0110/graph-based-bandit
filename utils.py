@@ -12,7 +12,7 @@ def create_networkx_graph(node_num, adj_matrix):
 	G.add_nodes_from(list(range(node_num)))
 	for i in range(node_num):
 		for j in range(node_num):
-			if adj_matrix[i,j]!=0:
+			if adj_matrix[i,j]!=0.0:
 				G.add_edge(i,j,weight=adj_matrix[i,j])
 			else:
 				pass
@@ -66,3 +66,26 @@ def dictionary_matrix_generator(node_num, dimension, laplacian, lambda_):
 def normalized_trace(matrix, target_trace):
 	normed_matrix=target_trace*matrix/np.trace(matrix)
 	return normed_matrix
+
+
+def calculate_graph_approximation(i, dimension, user_num, user_index, alpha, normed_lap, user_v_i, user_f_matrix_ls, user_f_matrix_ridge):
+	ridge=user_f_matrix_ridge[user_index]
+	if i>=10*user_num:
+		avg=np.zeros(dimension)
+		for u in range(user_num):
+			if u==user_index:
+				pass 
+			else:
+				avg+=-normed_lap[user_index, u]*user_f_matrix_ls[u]
+		graph=ridge+alpha*np.dot(np.linalg.pinv(user_v_i), avg)
+	else:
+		graph=ridge
+	return graph 
+
+def modify_normed_lap(normed_lap):
+	for i in range(normed_lap.shape[0]):
+		if normed_lap[i,i]==0.0:
+			normed_lap[i,i]=1
+		else:
+			pass
+	return normed_lap

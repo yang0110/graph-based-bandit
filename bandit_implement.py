@@ -49,21 +49,15 @@ true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)+noise_matrix
 
 linucb_model=LINUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha, delta, sigma)
 gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, lap_binary, alpha, delta, sigma, beta)
-lints_model=LIN_TS(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha, delta, sigma)
-gobts_model=GOB_TS(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, lap_binary, alpha, delta, sigma, beta)
 lapucb_model=LAPUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha, delta, sigma)
 lapucb_sim_model=LAPUCB_SIM(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha, delta, sigma)
-lapts_model=LAP_TS(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha, delta, sigma)
 club_model = CLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs,normed_lap, alpha, alpha_2, delta, sigma, beta)
 sclub_model = SCLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs,normed_lap, alpha, delta, sigma, beta)
 
 linucb_regret, linucb_error, linucb_beta=linucb_model.run(user_seq, item_pool_seq, iteration)
 gob_regret, gob_error, gob_beta=gob_model.run(user_seq, item_pool_seq, iteration)
-lints_regret, lints_error=lints_model.run(user_seq, item_pool_seq, iteration)
-gobts_regret, gobts_error=gobts_model.run(user_seq, item_pool_seq, iteration)
 lapucb_regret, lapucb_error, lapucb_beta=lapucb_model.run(user_seq, item_pool_seq, iteration)
 lapucb_sim_regret, lapucb_sim_error, lapucb_sim_beta=lapucb_sim_model.run(user_seq, item_pool_seq, iteration)
-lapts_regret, lapts_error=lapts_model.run(user_seq, item_pool_seq, iteration)
 club_regret, club_error,club_graph_error, club_cluster_num, club_beta=club_model.run(user_seq, item_pool_seq, iteration)
 sclub_regret, sclub_error,sclub_graph_error, sclub_cluster_num, sclub_beta=sclub_model.run(user_seq, item_pool_seq, iteration)
 
