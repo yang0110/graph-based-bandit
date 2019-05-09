@@ -70,17 +70,20 @@ def normalized_trace(matrix, target_trace):
 
 def calculate_graph_approximation(i, dimension, user_num, user_index, alpha, normed_lap, user_v_i, user_f_matrix_ls, user_f_matrix_ridge):
 	ridge=user_f_matrix_ridge[user_index]
-	if i>=10*user_num:
-		avg=np.zeros(dimension)
-		for u in range(user_num):
-			if u==user_index:
-				pass 
-			else:
-				avg+=-normed_lap[user_index, u]*user_f_matrix_ls[u]
+	avg=np.dot(user_f_matrix_ls.T, -normed_lap[user_index])+user_f_matrix_ls[user_index]
+	graph=ridge+alpha*np.dot(np.linalg.pinv(user_v_i), avg)
+	return graph 
+
+
+def calculate_graph_approximation_2(i, dimension, user_num, user_index, alpha, normed_lap, user_v_i, user_f_matrix_ls, user_f_matrix_ridge):
+	ridge=user_f_matrix_ridge[user_index]
+	if i>=1*user_num:
+		avg=np.dot(user_f_matrix_ls.T, -normed_lap[user_index])+user_f_matrix_ls[user_index]
 		graph=ridge+alpha*np.dot(np.linalg.pinv(user_v_i), avg)
 	else:
 		graph=ridge
 	return graph 
+
 
 def modify_normed_lap(normed_lap):
 	for i in range(normed_lap.shape[0]):
@@ -89,3 +92,60 @@ def modify_normed_lap(normed_lap):
 		else:
 			pass
 	return normed_lap
+
+
+def graph_error_bound(user_index, user_v_i, normed_lap, user_f_matrix_ls, user_f_matrix_graph_i, alpha, xnoise_i):
+	a=np.trace(np.linalg.pinv(user_v_i))
+	avg=np.dot(user_f_matrix_ls.T, -normed_lap[user_index])+user_f_matrix_ls[user_index]
+	b=alpha*np.linalg.norm(user_f_matrix_graph_i-avg)
+	c=np.linalg.norm(xnoise_i)
+	bound=a*(b+c)
+	return bound 
+
+def ridge_error_bound(user_v_i, user_f_matrix_ridge_i, alpha, xnoise_i):
+	a=np.trace(np.linalg.pinv(user_v_i))
+	b=alpha*np.linalg.norm(user_f_matrix_ridge_i)
+	c=np.linalg.norm(xnoise_i)
+	bound=a*(b+c)
+	return bound 
+
+
+def graph_UCB(user_index, user_v_i, normed_lap, user_f_matrix_ls, user_f_matrix_graph_i, alpha, xnoise_i):
+	a=alpha*np.sqrt(np.trace(np.linalg.pinv(user_v_i)))
+	avg=np.dot(user_f_matrix_ls.T, -normed_lap[user_index])+user_f_matrix_ls[user_index]
+	b=np.linalg.norm(user_f_matrix_graph_i-avg)
+	v_inv=np.linalg.pinv(user_v_i)
+	c=np.sqrt(np.dot(np.dot(xnoise_i,v_inv), xnoise_i))
+	ucb=a*b+c
+	return ucb 
+
+
+def ridge_UCB(user_v_i, user_f_matrix_ridge_i, alpha, xnoise_i):
+	a=alpha*np.sqrt(np.trace(np.linalg.pinv(user_v_i)))
+	b=np.linalg.norm(user_f_matrix_ridge_i)
+	v_inv=np.linalg.pinv(user_v_i)
+	c=np.sqrt(np.dot(np.dot(xnoise_i,v_inv), xnoise_i))
+	ucb=a*b+c
+	return ucb 
+
+def ridge_UCB_old(user_v_i, user_f_matrix_ridge_i, alpha, xnoise_i):
+	a=alpha*np.linalg.norm(user_f_matrix_ridge_i)
+	v_inv=np.linalg.pinv(user_v_i)
+	c=np.sqrt(np.dot(np.dot(xnoise_i,v_inv), xnoise_i))
+	ucb=a+c
+	return ucb 
+
+
+def graph_true_UCB(user_index, user_v_i, normed_lap, user_f_matrix_ls, user_f_matrix_graph_i, alpha, xnoise_i):
+	avg=np.dot(user_f_matrix_ls.T, -normed_lap[user_index])+user_f_matrix_ls[user_index]
+	a=alpha*(user_f_matrix_graph_i-avg)-xnoise_i
+	v_inv=np.linalg.pinv(user_v_i)
+	ucb=np.sqrt(np.dot(np.dot(a,v_inv), a))
+	return ucb 
+
+
+def ridge_true_UCB(user_v_i, user_f_matrix_ridge_i, alpha, xnoise_i):
+	a=alpha*(user_f_matrix_ridge_i)-xnoise_i
+	v_inv=np.linalg.pinv(user_v_i)
+	ucb=np.sqrt(np.dot(np.dot(a,v_inv), a))
+	return ucb 

@@ -9,9 +9,9 @@ import scipy
 import os 
 os.chdir('C:/Kaige_Research/Code/graph_bandit/code/')
 from utils import *
-path='../estimation_results/'
+path='../approximation_results/'
 
-user_num=20
+user_num=10
 item_num=100
 dimension=5
 alpha=1
@@ -50,7 +50,6 @@ for ind, thres in enumerate(thres_list):
 	user_f_matrix_ls=np.zeros((user_num, dimension))
 	user_f_matrix_ridge=np.zeros((user_num, dimension))
 	user_f_matrix_graph=np.zeros((user_num, dimension))
-
 	user_f_matrix_appro=np.zeros((user_num, dimension))
 
 	A=np.kron(normed_lap+beta*np.identity(user_num), np.identity(dimension))
@@ -78,6 +77,7 @@ for ind, thres in enumerate(thres_list):
 		user_error_ridge[u]=[]
 		user_error_graph[u]=[]
 		user_error_appro[u]=[]
+
 
 	total_error_ls=np.zeros(iteration)
 	total_error_ridge=np.zeros(iteration)
@@ -116,12 +116,11 @@ for ind, thres in enumerate(thres_list):
 		user_error_graph[user_index].extend([np.linalg.norm(user_f_matrix_graph[user_index]-user_f[user_index])])
 		user_error_appro[user_index].extend([np.linalg.norm(user_f_matrix_appro[user_index]-user_f[user_index])])
 
-
 	plt.figure(figsize=(5,5))
 	#plt.plot(total_error_ls, label='least-square')
 	plt.plot(total_error_ridge, label='Ridge')
 	plt.plot(total_error_graph, label='Graph')
-	plt.plot(total_error_appro, label='Graph-Appro')
+	plt.plot(total_error_appro, label='Graph-Approx')
 	plt.ylabel('Estimation Error', fontsize=12)
 	plt.xlabel('Time', fontsize=12)
 	plt.tight_layout()
