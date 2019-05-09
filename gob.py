@@ -17,7 +17,7 @@ class GOB():
 		self.true_user_feature_vector=true_user_feature_matrix.flatten()
 		self.user_feature=np.zeros(self.user_num*self.dimension)
 		self.I=np.identity(self.user_num*self.dimension)
-		self.L=lap+np.identity(self.user_num)
+		self.L=lap+0.1*np.identity(self.user_num)
 		self.A=np.kron(self.L, np.identity(self.dimension))
 		self.A_inv=np.linalg.pinv(self.A)
 		self.A_sqrt=scipy.linalg.sqrtm(self.A)
@@ -33,15 +33,16 @@ class GOB():
 	def update_beta(self): #not used
 		a=np.linalg.det(self.covariance)**(1/2)
 		b=np.linalg.det(self.alpha*self.I)**(-1/2)
-		self.beta=self.sigma*np.sqrt(2*np.log(a*b/self.delta))+np.sqrt(self.alpha)*np.linalg.norm(np.dot(self.A_sqrt,self.true_user_feature_vector))
-		self.beta_list.extend([self.beta])
+		beta=self.sigma*np.sqrt(2*np.log(a*b/self.delta))+np.sqrt(self.alpha)*np.linalg.norm(np.dot(self.A_sqrt,self.true_user_feature_vector))
+		self.beta_list.extend([beta])
 		
 	def select_item(self, item_pool, user_index, time):
 		item_fs=self.item_feature_matrix[item_pool]
 		item_feature_array=np.zeros((self.pool_size, self.user_num*self.dimension))
 		item_feature_array[:,user_index*self.dimension:(user_index+1)*self.dimension]=item_fs
 		estimated_payoffs=np.zeros(self.pool_size)
-		#self.update_beta()
+		# self.update_beta()
+		self.beta_list.extend([self.beta])
 		cov_inv=np.linalg.pinv(self.covariance)
 		for j in range(self.pool_size):
 			x=item_feature_array[j]

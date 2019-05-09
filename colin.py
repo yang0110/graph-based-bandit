@@ -16,6 +16,7 @@ class COLIN():
 		self.B=np.zeros(self.user_num*self.dimension)
 		self.V_inv=np.linalg.pinv(self.V)
 		self.true_user_feature_matrix=true_user_feature_matrix.T
+		self.true_user_feature_vector=self.true_user_feature_matrix.flatten()
 		self.true_payoffs=true_payoffs
 		self.item_feature_matrix=item_feature_matrix
 		self.user_f_matrix=np.zeros((self.dimension, self.user_num))
@@ -23,13 +24,16 @@ class COLIN():
 		self.user_f_vector=np.zeros((self.user_num*self.dimension))
 		self.big_w=np.kron(self.w.T, np.identity(self.dimension))
 		self.cca=np.dot(np.dot(self.big_w, self.V_inv), self.big_w.T)
-		self.beta=0.0
+		self.beta=beta
 		self.sigma=sigma 
 		self.delta=delta
 		self.beta_list=[]
 
-	def select_item(self, item_pool, user_index):
-		self.beta=0.01*np.sqrt(np.log(np.linalg.det(self.V)/float(self.delta*self.alpha)))+np.sqrt(self.alpha)
+	def select_item(self, item_pool, user_index, time):
+		# a=np.linalg.det(self.V)**(1/2)
+		# b=np.linalg.det(self.alpha*np.identity(self.user_num*self.dimension))**(-1/2)
+		# beta=self.sigma*np.sqrt(2*np.log(a*b/self.delta))+np.sqrt(self.alpha)*np.linalg.norm(np.dot(self.user_f_matrix, self.w))
+		# self.beta_list.extend([beta])
 		self.beta_list.extend([self.beta])
 		pta_list=np.zeros(self.pool_size)
 		for ind, item_index in enumerate(item_pool):
@@ -39,7 +43,7 @@ class COLIN():
 			item_f_vector=item_f_matrix.flatten()
 			mean=np.dot(self.co_user_f_matrix[:,user_index], item_f)
 			var=np.sqrt(np.dot(np.dot(item_f_vector, self.cca), item_f_vector))
-			pta=mean+self.beta*var 
+			pta=mean+self.beta*var**np.sqrt(np.log(time+1))
 			pta_list[ind]=pta 
 
 		max_index=np.argmax(pta_list)
@@ -69,7 +73,7 @@ class COLIN():
 			print('time/iteration', time, iteration, '~~~CoLin')
 			user_index=user_array[time]
 			item_pool=item_pool_array[time]
-			true_payoff, selected_item_feature, regret=self.select_item(item_pool, user_index)
+			true_payoff, selected_item_feature, regret=self.select_item(item_pool, user_index, time)
 			self.update_user_feature(true_payoff, selected_item_feature, user_index)
 			error=np.linalg.norm(self.user_f_matrix-self.true_user_feature_matrix)
 			cumulative_regret.extend([cumulative_regret[-1]+regret])
