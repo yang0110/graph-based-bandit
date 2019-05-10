@@ -20,10 +20,10 @@ from club import CLUB
 from utils import *
 from sklearn.decomposition import NMF
 from Recommender.matrix_factor_model import ProductRecommender
-input_path='../processed_data/movielens/'
-path='../bandit_results/movielens/'
+input_path='../processed_data/lastfm/'
+path='../bandit_results/lastfm/'
 
-# rate_matrix=np.load(input_path+'rating_matrix_30_user_100_movies.npy')
+# rate_matrix=np.load(input_path+'rating_matrix_30_user_100_artist.npy')
 # true_payoffs=rate_matrix/np.max(rate_matrix)
 # true_payoffs[true_payoffs==0]=np.nan
 # nmf_model=ProductRecommender()
@@ -43,11 +43,9 @@ path='../bandit_results/movielens/'
 user_feature_matrix=np.load(input_path+'user_feature_matrix_30.npy')
 item_feature_matrix=np.load(input_path+'item_feature_matrix_100.npy')
 true_payoffs=np.load(input_path+'true_payoffs_30_100.npy')
-
 user_feature_matrix=Normalizer().fit_transform(user_feature_matrix)
 item_feature_matrix=Normalizer().fit_transform(item_feature_matrix)
 true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)
-
 
 user_num=true_payoffs.shape[0]
 dimension=item_feature_matrix.shape[1]
@@ -153,3 +151,4 @@ plt.xlabel('Time', fontsize=12)
 plt.legend(loc=1, fontsize=10)
 plt.tight_layout()
 plt.show()
+

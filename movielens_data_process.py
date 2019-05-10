@@ -3,7 +3,7 @@ import numpy as np
 import json
 import matplotlib.pyplot as plt
 import os
-os.chdir('/Users/KGYaNG/Documents/research/graph_bandit/code/')
+os.chdir('C:/Kaige_Research/Code/graph_bandit/code/')
 input_path='../original_data/movielens/'
 output_path='../processed_data/movielens/'
 print(os.listdir(input_path))

@@ -20,10 +20,10 @@ from club import CLUB
 from utils import *
 from sklearn.decomposition import NMF
 from Recommender.matrix_factor_model import ProductRecommender
-input_path='../processed_data/movielens/'
-path='../bandit_results/movielens/'
+input_path='../processed_data/delicious/'
+path='../bandit_results/delicious/'
 
-# rate_matrix=np.load(input_path+'rating_matrix_30_user_100_movies.npy')
+# rate_matrix=np.load(input_path+'rating_matrix_30_user_100_bookmark.npy')
 # true_payoffs=rate_matrix/np.max(rate_matrix)
 # true_payoffs[true_payoffs==0]=np.nan
 # nmf_model=ProductRecommender()
@@ -33,7 +33,6 @@ path='../bandit_results/movielens/'
 # # nmf_model=NMF(n_components=5,random_state=2019)
 # # user_feature_matrix=nmf_model.fit_transform(true_payoffs)
 # # item_feature_matrix=nmf_model.components_.T
-
 # np.save(input_path+'user_feature_matrix_30.npy', user_feature_matrix)
 # np.save(input_path+'item_feature_matrix_100.npy', item_feature_matrix)
 # true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)
@@ -43,7 +42,6 @@ path='../bandit_results/movielens/'
 user_feature_matrix=np.load(input_path+'user_feature_matrix_30.npy')
 item_feature_matrix=np.load(input_path+'item_feature_matrix_100.npy')
 true_payoffs=np.load(input_path+'true_payoffs_30_100.npy')
-
 user_feature_matrix=Normalizer().fit_transform(user_feature_matrix)
 item_feature_matrix=Normalizer().fit_transform(item_feature_matrix)
 true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)

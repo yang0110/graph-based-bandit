@@ -1,5 +1,6 @@
 import numpy as np 
 import networkx as nx
+import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.preprocessing import Normalizer, MinMaxScaler
@@ -34,7 +35,7 @@ item_pool_seq=np.random.choice(range(item_num), size=(iteration, pool_size))
 item_feature_matrix=Normalizer().fit_transform(np.random.normal(size=(item_num, dimension)))
 
 adj=RBF_graph(user_num, dimension, thres=0.0)
-#adj=BA_graph(user_num, 3)
+adj=BA_graph(user_num, 3)
 #adj=ER_graph(user_num, 0.5)
 normed_adj=adj/adj.sum(axis=0,keepdims=1)
 lap=csgraph.laplacian(adj, normed=False)
