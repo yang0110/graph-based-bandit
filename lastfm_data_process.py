@@ -11,7 +11,7 @@ print(os.listdir(input_path))
 rating=pd.read_csv(input_path+'user_taggedartists.dat', delimiter="\t")
 user_id=rating['userID'].values 
 movie_id=rating['artistID'].values 
-ratings=rating['ragID'].values 
+ratings=rating['tagID'].values 
 
 unique_user_id=np.unique(user_id)
 user_num=len(np.unique(user_id))
@@ -19,9 +19,9 @@ user_num=len(np.unique(user_id))
 unique_movie_id=np.unique(movie_id)
 movie_num=len(unique_movie_id)
 
-multiple_rated=rating.groupby(['userID', 'artistID']).size().sort_values(ascending=False)
+multiple_rated=rating.groupby(['userID', 'artistID', 'day', 'month', 'year']).size().sort_values(ascending=False)
 m_rated=multiple_rated.reset_index()
-columns=['userID', 'artistID', 'rate_times']
+columns=['userID', 'artistID', 'day', 'month', 'year', 'rate_times']
 m_rated.columns=columns
 
 

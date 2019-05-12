@@ -20,8 +20,8 @@ from club import CLUB
 from utils import *
 from sklearn.decomposition import NMF
 from Recommender.matrix_factor_model import ProductRecommender
-input_path='../processed_data/movielens/'
-path='../bandit_results/movielens/'
+input_path='../processed_data/netflix/'
+path='../bandit_results/netflix/'
 
 # rate_matrix=np.load(input_path+'rating_matrix_100_user_500_movies.npy')
 # true_payoffs=rate_matrix/np.max(rate_matrix)
@@ -50,14 +50,14 @@ user_num=true_payoffs.shape[0]
 dimension=item_feature_matrix.shape[1]
 item_num=item_feature_matrix.shape[0]
 pool_size=10
-iteration=1000
+iteration=5000
 sigma=0.1# noise
 delta=0.01# high probability
 alpha=1# regularizer
 alpha_2=0.2# edge delete CLUB
 beta=0.01 # exploration for CLUB, SCLUB and GOB
 thres=0.7
-k=3
+k=3 # edge number each node SCLUb to control the sparsity
 true_adj=rbf_kernel(user_feature_matrix, gamma=0.5)
 true_adj[true_adj<=thres]=0.0
 true_normed_adj=true_adj/true_adj.sum(axis=0,keepdims=1)
@@ -79,8 +79,7 @@ colin_model=COLIN(dimension, user_num, item_num, pool_size, item_feature_matrix,
 lapucb_model=LAPUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha, delta, sigma, beta, 0.0)
 lapucb_sim_model=LAPUCB_SIM(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha, delta, sigma, beta, 0.0)
 club_model = CLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs,normed_lap, alpha, alpha_2, delta, sigma, beta)
-#sclub_model = SCLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs,normed_lap, k,alpha, delta, sigma, beta)
-
+#sclub_model = SCLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, normed_lap, k, alpha, delta, sigma, beta)
 
 linucb_regret, linucb_error, linucb_beta=linucb_model.run(user_seq, item_pool_seq, iteration)
 gob_regret, gob_error, gob_beta=gob_model.run(user_seq, item_pool_seq, iteration)
@@ -103,13 +102,13 @@ club_regret, club_error, club_cluster_num, club_beta=club_model.run(user_seq, it
 # nx.draw_networkx_labels(graph, pos, font_color='k')
 # edge_labels=nx.draw_networkx_edge_labels(graph,pos, edge_labels=labels)
 # plt.axis('off')
-# plt.savefig(path+'graph_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
-# plt.savefig(path+'graph_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
+# plt.savefig(path+'graph_netflix_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
+# plt.savefig(path+'graph_netflix_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
 # plt.clf()
 
 
 plt.figure(figsize=(5,5))
-plt.plot(linucb_regret,'-.', label='LinUCB')
+plt.plot(linucb_regret,'-.', label='LINUCB')
 plt.plot(gob_regret, label='GOB')
 plt.plot(colin_regret, label='CoLin')
 plt.plot(lapucb_regret, '-*', markevery=0.1, label='G-UCB')
@@ -120,13 +119,13 @@ plt.ylabel('Cumulative Regret', fontsize=12)
 plt.xlabel('Time', fontsize=12)
 plt.legend(loc=2, fontsize=10)
 plt.tight_layout()
-plt.savefig(path+'regret_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
-plt.savefig(path+'regret_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
+plt.savefig(path+'regret_netflix_user_num_%s_item_num_%s'%(user_num, 500)+'.png', dpi=300)
+plt.savefig(path+'regret_netflix_user_num_%s_item_num_%s'%(user_num, 500)+'.eps', dpi=300)
 plt.show()
 
 
 plt.figure(figsize=(5,5))
-plt.plot(linucb_error,'-.', label='LinUCB')
+plt.plot(linucb_error,'-.', label='LINUCB')
 plt.plot(gob_error, label='GOB')
 plt.plot(colin_error, label='CoLin')
 plt.plot(lapucb_error, '-*', markevery=0.1, label='G-UCB')
@@ -137,8 +136,8 @@ plt.ylabel('Error', fontsize=12)
 plt.xlabel('Time', fontsize=12)
 plt.legend(loc=1, fontsize=10)
 plt.tight_layout()
-plt.savefig(path+'error_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
-plt.savefig(path+'error_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
+plt.savefig(path+'error_netflix_user_num_%s_item_num_%s'%(user_num, 500)+'.png', dpi=300)
+plt.savefig(path+'error_netflix_user_num_%s_item_num_%s'%(user_num, 500)+'.eps', dpi=300)
 plt.show()
 
 
@@ -154,8 +153,8 @@ plt.show()
 # plt.xlabel('Time', fontsize=12)
 # plt.legend(loc=1, fontsize=10)
 # plt.tight_layout()
-# plt.savefig(path+'beta_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
-# plt.savefig(path+'beta_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
+# plt.savefig(path+'beta_netflix_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
+# plt.savefig(path+'beta_netflix_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
 # plt.clf()
 
 # plt.figure(figsize=(5,5))

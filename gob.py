@@ -15,18 +15,20 @@ class GOB():
 		self.true_user_feature_matrix=true_user_feature_matrix
 		self.true_payoffs=true_payoffs
 		self.true_user_feature_vector=true_user_feature_matrix.flatten()
-		self.user_feature=np.zeros(self.user_num*self.dimension)
+		self.user_feature_vector=np.zeros(self.user_num*self.dimension)
+		self.user_feature_matrix=np.zeros((self.user_num, self.dimension))
 		self.I=np.identity(self.user_num*self.dimension)
-		self.L=lap+0.1*np.identity(self.user_num)
+		self.L=lap+0.01*np.identity(self.user_num)
 		self.A=np.kron(self.L, np.identity(self.dimension))
 		self.A_inv=np.linalg.pinv(self.A)
 		self.A_sqrt=scipy.linalg.sqrtm(self.A)
 		self.A_inv_sqrt=scipy.linalg.sqrtm(self.A_inv)
+		self.A_sqrt_inv=np.linalg.pinv(self.A_inv_sqrt)
 		self.alpha=alpha
 		self.delta=delta
 		self.sigma=sigma
 		self.beta=beta
-		self.covariance=self.alpha*self.I
+		self.covariance=np.identity(self.user_num*self.dimension)
 		self.bias=np.zeros(self.user_num*self.dimension)
 		self.beta_list=[]
 
@@ -45,26 +47,32 @@ class GOB():
 		self.beta_list.extend([self.beta])
 		cov_inv=np.linalg.pinv(self.covariance)
 		for j in range(self.pool_size):
-			x=item_feature_array[j]
-			x=np.dot(self.A_inv_sqrt, x)
-			x_norm=np.sqrt(np.dot(np.dot(x, cov_inv),x))
-			est_y=np.dot(x, self.user_feature)+self.beta*x_norm*np.sqrt(np.log(time+1))
-			estimated_payoffs[j]=np.real(est_y)
+			item_index=item_pool[j]
+			x=self.item_feature_matrix[item_index]
+			x_long=np.zeros((self.dimension*self.user_num))
+			x_long[user_index*self.dimension:(user_index+1)*self.dimension]=x
+			co_x=np.dot(np.real(self.A_inv_sqrt), x_long)
+			x_norm=np.sqrt(np.dot(np.dot(co_x, cov_inv),co_x))
+			est_y=np.dot(self.user_feature_vector, co_x)+self.beta*x_norm*np.sqrt(np.log(time+1))
+			estimated_payoffs[j]=est_y
 
 		max_index=np.argmax(estimated_payoffs)
 		selected_item_index=item_pool[max_index]
-		selected_item_feature=item_feature_array[max_index]
+		selected_item_feature=item_fs[max_index]
 		true_payoff=self.true_payoffs[user_index, selected_item_index]
 		max_ideal_payoff=np.max(self.true_payoffs[user_index][item_pool])
 		regret=max_ideal_payoff-true_payoff
 		return true_payoff, selected_item_feature, regret
 
 	def update_user_feature(self, true_payoff, selected_item_feature, user_index):
-		x_share=np.real(np.dot(self.A_inv_sqrt, selected_item_feature))
-		self.covariance+=np.outer(x_share, x_share)
-		self.bias+=true_payoff*x_share
+		x_long=np.zeros(self.dimension*self.user_num)
+		x_long[user_index*self.dimension:(user_index+1)*self.dimension]=selected_item_feature
+		co_x=np.dot(np.real(self.A_inv_sqrt), x_long)
+		self.covariance+=np.outer(co_x, co_x)
+		self.bias+=true_payoff*co_x
 		cov_inv=np.linalg.pinv(self.covariance)
-		self.user_feature=np.dot(cov_inv, self.bias)
+		self.user_feature_vector=np.dot(cov_inv, self.bias)
+		self.user_feature_matrix=self.user_feature_vector.reshape((self.user_num, self.dimension))
 
 	def run(self,  user_array, item_pool_array, iteration):
 		cumulative_regret=[0]
@@ -76,10 +84,8 @@ class GOB():
 			item_pool=item_pool_array[time]
 			true_payoff, selected_item_feature, regret=self.select_item(item_pool, user_index, time)
 			self.update_user_feature(true_payoff, selected_item_feature, user_index)
-			error=np.linalg.norm(self.user_feature-self.true_user_feature_vector)
 			cumulative_regret.extend([cumulative_regret[-1]+regret])
-			learning_error_list[time]=error 
-			error_2=np.linalg.norm(self.user_feature-np.dot(self.A_sqrt, self.true_user_feature_vector))
-			learning_error_list_2[time]=error_2
+			error=np.linalg.norm(np.dot(np.real(self.A_inv_sqrt),self.user_feature_vector)-self.true_user_feature_vector)
+			learning_error_list[time]=error
 
 		return np.array(cumulative_regret), learning_error_list, self.beta_list

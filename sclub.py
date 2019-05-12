@@ -7,9 +7,8 @@ import os
 from community import community_louvain
 from utils import *
 
-
 class SCLUB():
-	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, normed_L, alpha, delta, sigma, beta):
+	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, normed_L,k, alpha, delta, sigma, beta):
 		self.dimension=dimension
 		self.user_num=user_num
 		self.item_num=item_num
@@ -19,9 +18,8 @@ class SCLUB():
 		self.true_payoffs=true_payoffs
 		self.user_feature=np.zeros((self.user_num, self.dimension))
 		self.I=np.identity(self.user_num)
-		self.L=np.identity(self.user_num)
-		self.true_L=normed_L
-		self.adj=np.identity(self.user_num)
+		self.adj=np.zeros((self.user_num, self.user_num))
+		self.k=k
 		self.cluster_list=np.array(list(range(self.user_num)))
 		self.alpha=alpha
 		self.delta=delta
@@ -36,13 +34,11 @@ class SCLUB():
 		self.user_cluster_feature=np.zeros((self.user_num, self.dimension))
 
 	def update_cluster_by_cummunity_detection(self, user_index):
-		self.adj=rbf_kernel(self.user_feature)
-		self.L=csgraph.laplacian(self.adj, normed=True)
 		adj_row=rbf_kernel(self.user_feature[user_index].reshape(1,-1), self.user_feature)[0]
-		big_index=np.argsort(adj_row)[int(self.user_num/2):]
-		small_index=np.argsort(adj_row)[:int(self.user_num/2)]
+		#big_index=np.argsort(adj_row)[self.user_num-self.k:]
+		small_index=np.argsort(adj_row)[:self.user_num-self.k]
 		adj_row[small_index]=0.0
-		adj_row[big_index]=1.0
+		#adj_row[big_index]=1.0
 		self.adj[user_index,:]=adj_row
 		self.adj[:,user_index]=adj_row
 		graph, edge_num=create_networkx_graph(self.user_num, self.adj)
@@ -77,14 +73,12 @@ class SCLUB():
 		cluster_cov=self.user_cluster_cov[user_index]
 		cluster_cov_inv=np.linalg.pinv(cluster_cov)
 		est_payoffs=[]
-		self.update_beta(user_index)
-		self.beta=0.3
+		#self.update_beta(user_index)
 		for it in item_pool:
 			x=self.item_feature_matrix[it]
-			norm=np.sqrt(np.dot(np.dot(x, cluster_cov_inv), x))
-			est_payoffs.extend([np.dot(self.user_cluster_feature[user_index], x)+self.beta*norm*np.sqrt(np.log(time+1))])
-			#est_payoffs.extend([np.dot(self.user_cluster_feature[user_index], x)+self.beta*norm*np.sqrt(np.log(time+1))])
-
+			x_norm=np.sqrt(np.dot(np.dot(x, cluster_cov_inv), x))
+			est_payoff=np.dot(self.user_cluster_feature[user_index], x)+self.beta*x_norm*np.sqrt(np.log(time+1))
+			est_payoffs.extend([est_payoff])
 
 		itt=np.argmax(est_payoffs)
 		id_=item_pool[itt]
@@ -98,7 +92,6 @@ class SCLUB():
 		regret_error=[0]
 		learning_error=[]
 		cluster_num=[]
-		graph_learning_error=np.zeros(iteration)
 		for time in range(iteration):
 			print('time/iteration', time, iteration, '~~~ SCLUB')
 			item_pool=item_pool_array[time]
@@ -112,8 +105,7 @@ class SCLUB():
 			regret_error.extend([regret_error[-1]+regret])
 			learning_error.extend([np.linalg.norm(self.true_user_feature_matrix-self.user_feature)])
 			cluster_num.extend([self.cluster_num])
-			graph_learning_error[time]=np.linalg.norm(self.L-self.true_L)
-		return regret_error, learning_error,graph_learning_error, cluster_num, self.beta_list
+		return regret_error, learning_error,cluster_num, self.beta_list
 
 
 

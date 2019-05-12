@@ -20,10 +20,10 @@ from club import CLUB
 from utils import *
 from sklearn.decomposition import NMF
 from Recommender.matrix_factor_model import ProductRecommender
-input_path='../processed_data/movielens/'
-path='../bandit_results/movielens/'
+input_path='../processed_data/lastfm/'
+path='../bandit_results/lastfm/'
 
-# rate_matrix=np.load(input_path+'rating_matrix_100_user_500_movies.npy')
+# rate_matrix=np.load(input_path+'rating_matrix_100_user_500_artist.npy')
 # true_payoffs=rate_matrix/np.max(rate_matrix)
 # true_payoffs[true_payoffs==0]=np.nan
 # nmf_model=ProductRecommender()
@@ -38,13 +38,14 @@ path='../bandit_results/movielens/'
 # np.save(input_path+'item_feature_matrix_500.npy', item_feature_matrix)
 
 ####
-user_feature_matrix=np.load(input_path+'user_feature_matrix_100.npy')
-item_feature_matrix=np.load(input_path+'item_feature_matrix_500.npy')
+user_feature_matrix=np.load(input_path+'binary_rating_user_feature_matrix_100.npy')
+item_feature_matrix=np.load(input_path+'binary_rating_item_feature_matrix_500.npy')
 user_feature_matrix=user_feature_matrix[:30]
 #user_feature_matrix=Normalizer().fit_transform(user_feature_matrix)
 #item_feature_matrix=Normalizer().fit_transform(item_feature_matrix)
-true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)
-
+#true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)
+true_payoffs=np.load(input_path+'binary_rating_matrix_100_user_500_artist.npy')
+true_payoffs=true_payoffs[:30]
 
 user_num=true_payoffs.shape[0]
 dimension=item_feature_matrix.shape[1]
@@ -55,9 +56,9 @@ sigma=0.1# noise
 delta=0.01# high probability
 alpha=1# regularizer
 alpha_2=0.2# edge delete CLUB
-beta=0.01 # exploration for CLUB, SCLUB and GOB
-thres=0.7
-k=3
+beta=0.1 # exploration for CLUB, SCLUB and GOB
+thres=0.5
+k=3 # edge number each node SCLUb to control the sparsity
 true_adj=rbf_kernel(user_feature_matrix, gamma=0.5)
 true_adj[true_adj<=thres]=0.0
 true_normed_adj=true_adj/true_adj.sum(axis=0,keepdims=1)
@@ -79,7 +80,7 @@ colin_model=COLIN(dimension, user_num, item_num, pool_size, item_feature_matrix,
 lapucb_model=LAPUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha, delta, sigma, beta, 0.0)
 lapucb_sim_model=LAPUCB_SIM(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha, delta, sigma, beta, 0.0)
 club_model = CLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs,normed_lap, alpha, alpha_2, delta, sigma, beta)
-#sclub_model = SCLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs,normed_lap, k,alpha, delta, sigma, beta)
+#sclub_model = SCLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs,normed_lap, k, alpha, delta, sigma, beta)
 
 
 linucb_regret, linucb_error, linucb_beta=linucb_model.run(user_seq, item_pool_seq, iteration)
@@ -88,7 +89,8 @@ colin_regret, colin_error, colin_beta=colin_model.run(user_seq, item_pool_seq, i
 lapucb_regret, lapucb_error, lapucb_beta=lapucb_model.run(user_seq, item_pool_seq, iteration)
 lapucb_sim_regret, lapucb_sim_error, lapucb_sim_beta=lapucb_sim_model.run(user_seq, item_pool_seq, iteration)
 club_regret, club_error, club_cluster_num, club_beta=club_model.run(user_seq, item_pool_seq, iteration)
-#sclub_regret, sclub_error, sclub_cluster_num, sclub_beta=sclub_model.run(user_seq, item_pool_seq, iteration)
+#sclub_regret, sclub_error,sclub_cluster_num, sclub_beta=sclub_model.run(user_seq, item_pool_seq, iteration)
+
 
 # np.fill_diagonal(true_adj,0)
 # true_adj=np.round(true_adj, decimals=1)
@@ -103,13 +105,14 @@ club_regret, club_error, club_cluster_num, club_beta=club_model.run(user_seq, it
 # nx.draw_networkx_labels(graph, pos, font_color='k')
 # edge_labels=nx.draw_networkx_edge_labels(graph,pos, edge_labels=labels)
 # plt.axis('off')
-# plt.savefig(path+'graph_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
-# plt.savefig(path+'graph_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
+# plt.savefig(path+'graph_lastfm_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
+# plt.savefig(path+'graph_lastfm_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
 # plt.clf()
 
 
+
 plt.figure(figsize=(5,5))
-plt.plot(linucb_regret,'-.', label='LinUCB')
+plt.plot(linucb_regret,'-.', label='LINUCB')
 plt.plot(gob_regret, label='GOB')
 plt.plot(colin_regret, label='CoLin')
 plt.plot(lapucb_regret, '-*', markevery=0.1, label='G-UCB')
@@ -120,13 +123,13 @@ plt.ylabel('Cumulative Regret', fontsize=12)
 plt.xlabel('Time', fontsize=12)
 plt.legend(loc=2, fontsize=10)
 plt.tight_layout()
-plt.savefig(path+'regret_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
-plt.savefig(path+'regret_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
+plt.savefig(path+'regret_lastfm_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
+plt.savefig(path+'regret_lastfm_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
 plt.show()
 
 
 plt.figure(figsize=(5,5))
-plt.plot(linucb_error,'-.', label='LinUCB')
+plt.plot(linucb_error,'-.', label='LINUCB')
 plt.plot(gob_error, label='GOB')
 plt.plot(colin_error, label='CoLin')
 plt.plot(lapucb_error, '-*', markevery=0.1, label='G-UCB')
@@ -137,8 +140,8 @@ plt.ylabel('Error', fontsize=12)
 plt.xlabel('Time', fontsize=12)
 plt.legend(loc=1, fontsize=10)
 plt.tight_layout()
-plt.savefig(path+'error_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
-plt.savefig(path+'error_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
+plt.savefig(path+'error_lastfm_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
+plt.savefig(path+'error_lastfm_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
 plt.show()
 
 
@@ -146,16 +149,16 @@ plt.show()
 # plt.plot(linucb_beta, '-.', label='LINUCB')
 # plt.plot(gob_beta, label='GOB')
 # plt.plot(colin_beta, label='CoLin')
-# plt.plot(lapucb_beta, '-*', markevery=0.1, label='LAPUCB')
-# plt.plot(lapucb_sim_beta, '-*', markevery=0.1, label='LAPUCB SIM')
+# plt.plot(lapucb_beta, '-*', markevery=0.1, label='G-UCB')
+# plt.plot(lapucb_sim_beta, '-*', markevery=0.1, label='G-UCB SIM')
 # plt.plot(club_beta, label='CLUB')
 # plt.plot(sclub_beta, label='SCLUB')
 # plt.ylabel('beta', fontsize=12)
 # plt.xlabel('Time', fontsize=12)
 # plt.legend(loc=1, fontsize=10)
 # plt.tight_layout()
-# plt.savefig(path+'beta_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
-# plt.savefig(path+'beta_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
+# plt.savefig(path+'beta_lastfm_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
+# plt.savefig(path+'beta_lastfm_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
 # plt.clf()
 
 # plt.figure(figsize=(5,5))

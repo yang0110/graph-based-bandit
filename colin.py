@@ -7,6 +7,7 @@ import scipy
 class COLIN():
 	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, w, alpha, delta, sigma, beta):
 		self.w=w 
+		self.w_inv=np.linalg.pinv(self.w)
 		self.user_num=user_num
 		self.dimension=dimension
 		self.item_num=item_num
@@ -15,7 +16,7 @@ class COLIN():
 		self.V=self.alpha*np.identity(self.user_num*self.dimension)
 		self.B=np.zeros(self.user_num*self.dimension)
 		self.V_inv=np.linalg.pinv(self.V)
-		self.true_user_feature_matrix=true_user_feature_matrix.T
+		self.true_user_feature_matrix=true_user_feature_matrix
 		self.true_user_feature_vector=self.true_user_feature_matrix.flatten()
 		self.true_payoffs=true_payoffs
 		self.item_feature_matrix=item_feature_matrix
@@ -23,7 +24,6 @@ class COLIN():
 		self.co_user_f_matrix=np.zeros((self.dimension, self.user_num))
 		self.user_f_vector=np.zeros((self.user_num*self.dimension))
 		self.big_w=np.kron(self.w.T, np.identity(self.dimension))
-		self.cca=np.dot(np.dot(self.big_w, self.V_inv), self.big_w.T)
 		self.beta=beta
 		self.sigma=sigma 
 		self.delta=delta
@@ -35,22 +35,24 @@ class COLIN():
 		# beta=self.sigma*np.sqrt(2*np.log(a*b/self.delta))+np.sqrt(self.alpha)*np.linalg.norm(np.dot(self.user_f_matrix, self.w))
 		# self.beta_list.extend([beta])
 		self.beta_list.extend([self.beta])
-		pta_list=np.zeros(self.pool_size)
-		for ind, item_index in enumerate(item_pool):
+		est_payoffs=np.zeros(self.pool_size)
+		for j in range(self.pool_size):
+			item_index=item_pool[j]
 			item_f=self.item_feature_matrix[item_index]
 			item_f_matrix=np.zeros((self.dimension, self.user_num))
-			item_f_matrix[:,user_index]=item_f 
-			item_f_vector=item_f_matrix.flatten()
-			mean=np.dot(self.co_user_f_matrix[:,user_index], item_f)
-			var=np.sqrt(np.dot(np.dot(item_f_vector, self.cca), item_f_vector))
-			pta=mean+self.beta*var**np.sqrt(np.log(time+1))
-			pta_list[ind]=pta 
+			item_f_matrix[:, user_index]=item_f 
+			item_f_vector=item_f_matrix.flatten('F')
+			co_item_f_vector=np.dot(item_f_matrix, self.w.T).flatten('F')
+			mean=np.dot(self.co_user_f_matrix.flatten('F'), item_f_vector)
+			var=np.sqrt(np.dot(np.dot(co_item_f_vector, self.V_inv), co_item_f_vector))
+			est_payoff=mean+self.beta*var*np.sqrt(np.log(time+1))
+			est_payoffs[j]=est_payoff
 
-		max_index=np.argmax(pta_list)
+		max_index=np.argmax(est_payoffs)
 		item_index=item_pool[max_index]
 		selected_item_feature=self.item_feature_matrix[item_index]
 		true_payoff=self.true_payoffs[user_index, item_index]
-		max_payoff=np.max(self.true_payoffs[user_index, item_pool])
+		max_payoff=np.max(self.true_payoffs[user_index][item_pool])
 		regret=max_payoff-true_payoff
 		return true_payoff, selected_item_feature, regret
 
@@ -58,27 +60,27 @@ class COLIN():
 		y=true_payoff
 		x_matrix=np.zeros((self.dimension, self.user_num))
 		x_matrix[:,user_index]=selected_item_feature
-		xw=np.dot(x_matrix, self.w.T)
-		self.V+=np.outer(xw.flatten(), xw.flatten())
-		self.B+=y*xw.flatten()
+		co_x=np.dot(x_matrix, self.w.T).flatten('F')
+		self.V+=np.outer(co_x,co_x)
+		self.B+=y*co_x
 		self.V_inv=np.linalg.pinv(self.V)
-		self.user_f_matrix=np.dot(self.V_inv, self.B).reshape((self.dimension, self.user_num))
+		self.user_f_vector=np.dot(self.V_inv, self.B)
+		self.user_f_matrix=self.user_f_vector.reshape((self.user_num, self.dimension)).T
 		self.co_user_f_matrix=np.dot(self.user_f_matrix, self.w)
-		self.cca=np.dot(np.dot(self.big_w, self.V_inv), self.big_w.T)
 
 	def run(self,  user_array, item_pool_array, iteration):
 		cumulative_regret=[0]
 		learning_error_list=np.zeros(iteration)
+		learning_error_list_2=np.zeros(iteration)
 		for time in range(iteration):	
 			print('time/iteration', time, iteration, '~~~CoLin')
 			user_index=user_array[time]
 			item_pool=item_pool_array[time]
 			true_payoff, selected_item_feature, regret=self.select_item(item_pool, user_index, time)
 			self.update_user_feature(true_payoff, selected_item_feature, user_index)
-			error=np.linalg.norm(self.user_f_matrix-self.true_user_feature_matrix)
+			error=np.linalg.norm(self.user_f_matrix-self.true_user_feature_matrix.T)
 			cumulative_regret.extend([cumulative_regret[-1]+regret])
 			learning_error_list[time]=error 
-
 		return np.array(cumulative_regret), learning_error_list, self.beta_list
 
 

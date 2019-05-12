@@ -10,9 +10,9 @@ print(os.listdir(input_path))
 
 rating=pd.read_csv(input_path+'user_taggedbookmarks-timestamps.dat', delimiter="\t")
 
-multiple_rated=rating.groupby(['userID', 'bookmarkID']).size().sort_values(ascending=False)
+multiple_rated=rating.groupby(['userID', 'bookmarkID', 'timestamp']).size().sort_values(ascending=False)
 m_rated=multiple_rated.reset_index()
-columns=['userID', 'bookmarkID', 'rate_times']
+columns=['userID', 'bookmarkID', 'timestamp', 'rate_times']
 m_rated.columns=columns
 
 

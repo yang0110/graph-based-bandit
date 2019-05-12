@@ -20,7 +20,6 @@ class CLUB():
 		self.I=np.identity(self.user_num)
 		self.adj=np.ones((self.user_num, self.user_num))
 		self.L=np.zeros((self.user_num, self.user_num))
-		self.true_L=normed_L
 		self.cluster_list=np.array(list(range(self.user_num)))
 		self.cluster_num=0
 		self.alpha=alpha
@@ -48,7 +47,6 @@ class CLUB():
 		big_index=ratio>1.0
 		self.adj[big_index, user_index]=0.0
 		self.adj[user_index][big_index]=0.0
-		self.L=csgraph.laplacian(self.adj, normed=True)
 
 	def update_cluster_feature(self, user_index):
 		user_cluster_index=self.cluster_list[user_index]
@@ -82,13 +80,12 @@ class CLUB():
 		cluster_cov=self.user_cluster_cov[user_index]
 		cluster_cov_inv=np.linalg.pinv(cluster_cov)
 		est_payoffs=[]
-		self.update_beta(user_index)
-		self.beta=0.3
+		#self.update_beta(user_index)
 		for it in item_pool:
 			x=self.item_feature_matrix[it]
-			est_payoffs.extend([np.dot(self.user_cluster_feature[user_index], x)+self.beta*np.sqrt(np.dot(np.dot(x, cluster_cov_inv), x)*np.log(time+1))])
-			#est_payoffs.extend([np.dot(self.user_cluster_feature[user_index], x)+self.beta*np.sqrt(np.dot(np.dot(x, cluster_cov_inv), x))])
-
+			x_norm=np.sqrt(np.dot(np.dot(x, cluster_cov_inv), x))
+			est_payoff=np.dot(self.user_cluster_feature[user_index], x)+self.beta*x_norm*np.sqrt(np.log(time+1))
+			est_payoffs.extend([est_payoff])
 
 		itt=np.argmax(est_payoffs)
 		id_=item_pool[itt]
@@ -102,7 +99,6 @@ class CLUB():
 		regret_error=[0]
 		learning_error=[]
 		cluster_num=[]
-		graph_learning_error=np.zeros(iteration)
 		for time in range(iteration):
 			print('time/iteration', time, iteration, '~~~ CLUB')
 			item_pool=item_pool_array[time]
@@ -117,8 +113,7 @@ class CLUB():
 			regret_error.extend([regret_error[-1]+regret])
 			learning_error.extend([np.linalg.norm(self.true_user_feature_matrix-self.user_feature)])
 			cluster_num.extend([self.cluster_num])
-			graph_learning_error[time]=np.linalg.norm(self.L-self.true_L)
-		return regret_error, learning_error, graph_learning_error, cluster_num, self.beta_list
+		return regret_error, learning_error, cluster_num, self.beta_list
 
 
 
