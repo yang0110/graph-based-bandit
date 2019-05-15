@@ -34,8 +34,10 @@ class LAPUCB():
 		self.user_v={}
 		self.user_avg={}
 		self.user_ls=np.zeros((self.user_num, self.dimension))
+		self.user_ridge=np.zeros((self.user_num, self.dimension))
 		self.user_xx={}
 		self.user_bias={}
+		self.user_counter={}
 
 	def initialized_parameter(self):
 		for u in range(self.user_num):
@@ -43,6 +45,7 @@ class LAPUCB():
 			self.user_avg[u]=np.zeros(self.dimension)
 			self.user_xx[u]=np.zeros((self.dimension, self.dimension))
 			self.user_bias[u]=np.zeros(self.dimension)
+			self.user_counter[u]=0
 
 	def update_beta(self, user_index):
 		a=np.linalg.det(self.user_v[user_index])**(1/2)
@@ -84,27 +87,33 @@ class LAPUCB():
 		self.cov_inv=np.linalg.pinv(self.cov)
 		self.user_feature_matrix=np.dot(self.cov_inv, self.bias).reshape((self.user_num, self.dimension))
 		xx_inv=np.linalg.pinv(self.user_xx[user_index])
+		v_inv=np.linalg.pinv(self.user_v[user_index])
 		self.user_bias[user_index]+=true_payoff*x
 		self.user_ls[user_index]=np.dot(xx_inv, self.user_bias[user_index])
 		self.user_avg[user_index]=np.dot(self.user_ls.T, -self.L[user_index])+self.user_ls[user_index]
 
 	def update_graph(self, user_index):
-		adj_row=rbf_kernel(self.user_ls[user_index].reshape(1,-1), self.user_ls,gamma=1)
+		if self.user_counter[user_index]<=10:
+			adj_row=rbf_kernel(self.user_ridge[user_index].reshape(1,-1), self.user_ridge, gamma=0.5)
+		else:
+			adj_row=rbf_kernel(self.user_ls[user_index].reshape(1,-1), self.user_ls, gamma=0.5)
 		self.adj[user_index]=adj_row
 		self.adj[:,user_index]=adj_row
 		self.adj[self.adj<=self.thres]=0.0
 		normed_lap=csgraph.laplacian(self.adj, normed=True)
 		self.L=normed_lap+0.01*np.identity(self.user_num)
 		self.A=np.kron(self.L, np.identity(self.dimension))
-		self.cov=self.XX+self.A
+		self.cov=self.XX+self.alpha*self.A
 
-	def run(self,  user_array, item_pool_array, iteration):
+	def run(self, alpha, user_array, item_pool_array, iteration):
 		self.initialized_parameter()
 		cumulative_regret=[0]
 		learning_error_list=np.zeros(iteration)
 		for time in range(iteration):	
+			#self.alpha=alpha/np.sqrt((time+1))
 			print('time/iteration', time, iteration,'~~~G-UCB')
 			user_index=user_array[time]
+			self.user_counter[user_index]+=1
 			item_pool=item_pool_array[time]
 			true_payoff, selected_item_feature, regret=self.select_item(item_pool,user_index, time)
 			self.update_user_feature(true_payoff, selected_item_feature, user_index)

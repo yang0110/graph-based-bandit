@@ -59,12 +59,13 @@ class LINUCB():
 		self.user_bias[user_index]+=true_payoff*selected_item_feature
 		self.user_feature[user_index]=np.dot(np.linalg.pinv(self.user_cov[user_index]), self.user_bias[user_index])
 
-	def run(self,  user_array, item_pool_array, iteration):
+	def run(self, alpha, user_array, item_pool_array, iteration):
 		self.initial_user_parameter()
 		cumulative_regret=[0]
 		learning_error_list=[]
 		for time in range(iteration):	
-			print('time/iteration', time, iteration,'~~~LINUCB')
+			self.alpha=alpha/(time+1)
+			print('time/iteration', time, iteration,'~~~LinUCB')
 			user_index=user_array[time]
 			item_pool=item_pool_array[time]
 			true_payoff, selected_item_feature, regret=self.select_item(item_pool, user_index)

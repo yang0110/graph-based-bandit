@@ -68,17 +68,18 @@ class COLIN():
 		self.user_f_matrix=self.user_f_vector.reshape((self.user_num, self.dimension)).T
 		self.co_user_f_matrix=np.dot(self.user_f_matrix, self.w)
 
-	def run(self,  user_array, item_pool_array, iteration):
+	def run(self, alpha,  user_array, item_pool_array, iteration):
 		cumulative_regret=[0]
 		learning_error_list=np.zeros(iteration)
 		learning_error_list_2=np.zeros(iteration)
 		for time in range(iteration):	
+			self.alpha=alpha/(time+1)
 			print('time/iteration', time, iteration, '~~~CoLin')
 			user_index=user_array[time]
 			item_pool=item_pool_array[time]
 			true_payoff, selected_item_feature, regret=self.select_item(item_pool, user_index, time)
 			self.update_user_feature(true_payoff, selected_item_feature, user_index)
-			error=np.linalg.norm(self.user_f_matrix-self.true_user_feature_matrix.T)
+			error=np.linalg.norm(self.co_user_f_matrix-self.true_user_feature_matrix.T)
 			cumulative_regret.extend([cumulative_regret[-1]+regret])
 			learning_error_list[time]=error 
 		return np.array(cumulative_regret), learning_error_list, self.beta_list

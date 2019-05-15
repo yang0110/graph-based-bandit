@@ -28,7 +28,7 @@ class GOB():
 		self.delta=delta
 		self.sigma=sigma
 		self.beta=beta
-		self.covariance=np.identity(self.user_num*self.dimension)
+		self.covariance=self.alpha*np.identity(self.user_num*self.dimension)
 		self.bias=np.zeros(self.user_num*self.dimension)
 		self.beta_list=[]
 
@@ -74,11 +74,12 @@ class GOB():
 		self.user_feature_vector=np.dot(cov_inv, self.bias)
 		self.user_feature_matrix=self.user_feature_vector.reshape((self.user_num, self.dimension))
 
-	def run(self,  user_array, item_pool_array, iteration):
+	def run(self, alpha,  user_array, item_pool_array, iteration):
 		cumulative_regret=[0]
 		learning_error_list=np.zeros(iteration)
 		learning_error_list_2=np.zeros(iteration)
 		for time in range(iteration):	
+			self.alpha=alpha/(time+1)
 			print('time/iteration', time, iteration, '~~~GOB')
 			user_index=user_array[time]
 			item_pool=item_pool_array[time]

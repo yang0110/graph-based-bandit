@@ -78,12 +78,11 @@ class LAPUCB_SIM():
 		self.user_xx[user_index]+=np.outer(x, x)
 		xx_inv=np.linalg.pinv(self.user_xx[user_index])
 		self.user_ridge[user_index]=np.dot(v_inv, self.user_bias[user_index])
-		if self.user_counter[user_index]<=10:
-			xx_inv=v_inv
-		else:
-			pass 
 		self.user_ls[user_index]=np.dot(xx_inv, self.user_bias[user_index])
-		self.user_avg[user_index]=np.dot(self.user_ls.T, -self.L[user_index])+self.user_ls[user_index]
+		if self.user_counter[user_index]<=10:
+			self.user_avg[user_index]=np.dot(self.user_ridge.T, -self.L[user_index])+self.user_ridge[user_index]
+		else:
+			self.user_avg[user_index]=np.dot(self.user_ls.T, -self.L[user_index])+self.user_ls[user_index]
 		self.user_feature_matrix[user_index]=self.user_ridge[user_index]+self.alpha*np.dot(v_inv, self.user_avg[user_index])
 
 	def update_user_feature_upon_ls(self, user_index):
@@ -92,18 +91,22 @@ class LAPUCB_SIM():
 		self.user_feature_matrix[user_index]=self.user_ridge[user_index]+self.alpha*np.dot(v_inv, self.user_avg[user_index])
 
 	def update_graph(self, user_index):
-		adj_row=rbf_kernel(self.user_ls[user_index].reshape(1,-1), self.user_ls, gamma=1)
+		if self.user_counter[user_index]<=10:
+			adj_row=rbf_kernel(self.user_ridge[user_index].reshape(1,-1), self.user_ridge, gamma=0.5)
+		else:
+			adj_row=rbf_kernel(self.user_ls[user_index].reshape(1,-1), self.user_ls, gamma=0.5)
 		self.adj[user_index]=adj_row
 		self.adj[: user_index]=adj_row
 		self.adj[self.adj<=self.thres]=0.0
 		normed_lap=csgraph.laplacian(self.adj, normed=True)
 		self.L=normed_lap+0.01*np.identity(self.user_num)
 
-	def run(self,  user_array, item_pool_array, iteration):
+	def run(self, alpha, user_array, item_pool_array, iteration):
 		self.initialized_parameter()
 		cumulative_regret=[0]
 		learning_error_list=np.zeros(iteration)
-		for time in range(iteration):	
+		for time in range(iteration):
+			#self.alpha=alpha/(time+1)
 			print('time/iteration', time, iteration,'~~~G-UCB SIM')
 			user_index=user_array[time]
 			item_pool=item_pool_array[time]

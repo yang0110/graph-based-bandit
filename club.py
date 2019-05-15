@@ -95,11 +95,12 @@ class CLUB():
 		regret=true_max_payoff-true_payoff
 		return true_payoff, regret, selected_item_feature
 
-	def run(self, user_array, item_pool_array, iteration):
+	def run(self,alpha,  user_array, item_pool_array, iteration):
 		regret_error=[0]
 		learning_error=[]
 		cluster_num=[]
 		for time in range(iteration):
+			self.alpha=alpha/(time+1)
 			print('time/iteration', time, iteration, '~~~ CLUB')
 			item_pool=item_pool_array[time]
 			user_index=user_array[time]
