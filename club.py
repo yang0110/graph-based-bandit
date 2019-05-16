@@ -73,18 +73,19 @@ class CLUB():
 		cluster_cov_inv=np.linalg.pinv(cluster_cov)
 		a=np.linalg.det(cluster_cov)**(1/2)
 		b=np.linalg.det(self.alpha*np.identity(self.dimension))**(-1/2)
-		self.beta=self.sigma*np.sqrt(2*np.log(a*b/self.delta))+np.sqrt(self.alpha)*np.linalg.norm(self.true_user_feature_matrix[user_index])
+		self.beta=self.sigma*np.sqrt(2*np.log(a*b/self.delta))+np.sqrt(self.alpha)*np.linalg.norm(self.user_feature[user_index])
 		self.beta_list.extend([self.beta])
 
 	def select_item(self, user_index, item_pool, time):
 		cluster_cov=self.user_cluster_cov[user_index]
 		cluster_cov_inv=np.linalg.pinv(cluster_cov)
 		est_payoffs=[]
-		#self.update_beta(user_index)
+		self.update_beta(user_index)
 		for it in item_pool:
 			x=self.item_feature_matrix[it]
 			x_norm=np.sqrt(np.dot(np.dot(x, cluster_cov_inv), x))
-			est_payoff=np.dot(self.user_cluster_feature[user_index], x)+self.beta*x_norm*np.sqrt(np.log(time+1))
+			est_payoff=np.dot(self.user_cluster_feature[user_index], x)+self.beta*x_norm
+			#*np.sqrt(np.log(time+1))
 			est_payoffs.extend([est_payoff])
 
 		itt=np.argmax(est_payoffs)
@@ -95,12 +96,11 @@ class CLUB():
 		regret=true_max_payoff-true_payoff
 		return true_payoff, regret, selected_item_feature
 
-	def run(self,alpha,  user_array, item_pool_array, iteration):
+	def run(self, user_array, item_pool_array, iteration):
 		regret_error=[0]
 		learning_error=[]
 		cluster_num=[]
 		for time in range(iteration):
-			self.alpha=alpha/(time+1)
 			print('time/iteration', time, iteration, '~~~ CLUB')
 			item_pool=item_pool_array[time]
 			user_index=user_array[time]

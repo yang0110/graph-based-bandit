@@ -58,13 +58,14 @@ class LAPUCB():
 	def select_item(self, item_pool, user_index, time):
 		item_fs=self.item_feature_matrix[item_pool]
 		estimated_payoffs=np.zeros(self.pool_size)
-		#self.update_beta(user_index)
+		self.update_beta(user_index)
 		v_inv=np.linalg.pinv(self.user_v[user_index])
 		for j in range(self.pool_size):
 			x=item_fs[j]
 			x_norm=np.sqrt(np.dot(np.dot(x, v_inv),x))
 			mean=np.dot(x, self.user_feature_matrix[user_index])
-			est_y=mean+self.beta*x_norm*np.sqrt(np.log(time+1))
+			est_y=mean+self.beta*x_norm
+			#*np.sqrt(np.log(time+1))
 			estimated_payoffs[j]=est_y
 
 		max_index=np.argmax(estimated_payoffs)
@@ -81,6 +82,7 @@ class LAPUCB():
 		x_long[user_index*self.dimension:(user_index+1)*self.dimension]=x
 		self.user_v[user_index]+=np.outer(x, x)
 		self.user_xx[user_index]+=np.outer(x, x)
+		self.user_bias[user_index]+=true_payoff*x
 		self.cov+=np.outer(x_long, x_long)
 		self.XX+=np.outer(x_long, x_long)
 		self.bias+=true_payoff*x_long
@@ -88,15 +90,15 @@ class LAPUCB():
 		self.user_feature_matrix=np.dot(self.cov_inv, self.bias).reshape((self.user_num, self.dimension))
 		xx_inv=np.linalg.pinv(self.user_xx[user_index])
 		v_inv=np.linalg.pinv(self.user_v[user_index])
-		self.user_bias[user_index]+=true_payoff*x
+		if self.user_counter[user_index]<=10:
+			xx_inv=v_inv
+		else:
+			pass
 		self.user_ls[user_index]=np.dot(xx_inv, self.user_bias[user_index])
 		self.user_avg[user_index]=np.dot(self.user_ls.T, -self.L[user_index])+self.user_ls[user_index]
 
 	def update_graph(self, user_index):
-		if self.user_counter[user_index]<=10:
-			adj_row=rbf_kernel(self.user_ridge[user_index].reshape(1,-1), self.user_ridge, gamma=0.5)
-		else:
-			adj_row=rbf_kernel(self.user_ls[user_index].reshape(1,-1), self.user_ls, gamma=0.5)
+		adj_row=rbf_kernel(self.user_ls[user_index].reshape(1,-1), self.user_ls, gamma=0.5)
 		self.adj[user_index]=adj_row
 		self.adj[:,user_index]=adj_row
 		self.adj[self.adj<=self.thres]=0.0
@@ -105,12 +107,11 @@ class LAPUCB():
 		self.A=np.kron(self.L, np.identity(self.dimension))
 		self.cov=self.XX+self.alpha*self.A
 
-	def run(self, alpha, user_array, item_pool_array, iteration):
+	def run(self, user_array, item_pool_array, iteration):
 		self.initialized_parameter()
 		cumulative_regret=[0]
 		learning_error_list=np.zeros(iteration)
 		for time in range(iteration):	
-			#self.alpha=alpha/np.sqrt((time+1))
 			print('time/iteration', time, iteration,'~~~G-UCB')
 			user_index=user_array[time]
 			self.user_counter[user_index]+=1

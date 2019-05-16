@@ -66,18 +66,21 @@ class SCLUB():
 		self.user_feature[user_index]=np.dot(np.linalg.pinv(self.covariance[user_index]), self.bias[user_index])
 
 	def update_beta(self, user_index): #no used 
-		self.beta=self.sigma*np.sqrt(2*np.log(np.linalg.det(self.user_cluster_cov[user_index])**(1/2)*np.linalg.det(self.alpha*np.identity(self.dimension))**(-1/2)/self.delta))+np.sqrt(self.alpha)*np.linalg.norm(self.true_user_feature_matrix[user_index])
+		a=np.linalg.det(self.user_cluster_cov[user_index])**(1/2)
+		b=np.linalg.det(self.alpha*np.identity(self.dimension))**(-1/2)
+		self.beta=self.sigma*np.sqrt(2*np.log(a*b/self.delta))+np.sqrt(self.alpha)*np.linalg.norm(self.true_user_feature_matrix[user_index])
 		self.beta_list.extend([self.beta])
 
 	def select_item(self, user_index, item_pool, time):
 		cluster_cov=self.user_cluster_cov[user_index]
 		cluster_cov_inv=np.linalg.pinv(cluster_cov)
 		est_payoffs=[]
-		#self.update_beta(user_index)
+		self.update_beta(user_index)
 		for it in item_pool:
 			x=self.item_feature_matrix[it]
 			x_norm=np.sqrt(np.dot(np.dot(x, cluster_cov_inv), x))
-			est_payoff=np.dot(self.user_cluster_feature[user_index], x)+self.beta*x_norm*np.sqrt(np.log(time+1))
+			est_payoff=np.dot(self.user_cluster_feature[user_index], x)+self.beta*x_norm
+			#*np.sqrt(np.log(time+1))
 			est_payoffs.extend([est_payoff])
 
 		itt=np.argmax(est_payoffs)

@@ -22,6 +22,7 @@ class COLIN():
 		self.item_feature_matrix=item_feature_matrix
 		self.user_f_matrix=np.zeros((self.dimension, self.user_num))
 		self.co_user_f_matrix=np.zeros((self.dimension, self.user_num))
+		self.true_co_user_f_vector=np.dot(self.true_user_feature_matrix, self.w).flatten()
 		self.user_f_vector=np.zeros((self.user_num*self.dimension))
 		self.big_w=np.kron(self.w.T, np.identity(self.dimension))
 		self.beta=beta
@@ -29,13 +30,15 @@ class COLIN():
 		self.delta=delta
 		self.beta_list=[]
 
+	def update_beta(self): 
+		a=np.linalg.det(self.V)**(1/2)
+		b=np.linalg.det(self.alpha*np.identity(self.user_num*self.dimension))**(-1/2)
+		beta=self.sigma*np.sqrt(2*np.log(a*b/self.delta))+np.sqrt(self.alpha)*np.linalg.norm(self.co_user_f_matrix.flatten())
+		self.beta_list.extend([beta])
+
 	def select_item(self, item_pool, user_index, time):
-		# a=np.linalg.det(self.V)**(1/2)
-		# b=np.linalg.det(self.alpha*np.identity(self.user_num*self.dimension))**(-1/2)
-		# beta=self.sigma*np.sqrt(2*np.log(a*b/self.delta))+np.sqrt(self.alpha)*np.linalg.norm(np.dot(self.user_f_matrix, self.w))
-		# self.beta_list.extend([beta])
-		self.beta_list.extend([self.beta])
 		est_payoffs=np.zeros(self.pool_size)
+		self.update_beta()
 		for j in range(self.pool_size):
 			item_index=item_pool[j]
 			item_f=self.item_feature_matrix[item_index]
@@ -68,12 +71,11 @@ class COLIN():
 		self.user_f_matrix=self.user_f_vector.reshape((self.user_num, self.dimension)).T
 		self.co_user_f_matrix=np.dot(self.user_f_matrix, self.w)
 
-	def run(self, alpha,  user_array, item_pool_array, iteration):
+	def run(self, user_array, item_pool_array, iteration):
 		cumulative_regret=[0]
 		learning_error_list=np.zeros(iteration)
 		learning_error_list_2=np.zeros(iteration)
 		for time in range(iteration):	
-			self.alpha=alpha/(time+1)
 			print('time/iteration', time, iteration, '~~~CoLin')
 			user_index=user_array[time]
 			item_pool=item_pool_array[time]

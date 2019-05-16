@@ -32,7 +32,7 @@ class LINUCB():
 	def update_beta(self, user_index):
 		a = np.linalg.det(self.user_cov[user_index])**(1/2)
 		b = np.linalg.det(self.alpha*self.I)**(-1/2)
-		self.beta=self.sigma*np.sqrt(2*np.log(a*b/self.delta))+np.sqrt(self.alpha)*np.linalg.norm(self.true_user_feature_matrix[user_index])
+		self.beta=self.sigma*np.sqrt(2*np.log(a*b/self.delta))+np.sqrt(self.alpha)*np.linalg.norm(self.user_feature[user_index])
 		self.beta_list.extend([self.beta])
 
 	def select_item(self, item_pool, user_index):
@@ -59,12 +59,11 @@ class LINUCB():
 		self.user_bias[user_index]+=true_payoff*selected_item_feature
 		self.user_feature[user_index]=np.dot(np.linalg.pinv(self.user_cov[user_index]), self.user_bias[user_index])
 
-	def run(self, alpha, user_array, item_pool_array, iteration):
+	def run(self,user_array, item_pool_array, iteration):
 		self.initial_user_parameter()
 		cumulative_regret=[0]
 		learning_error_list=[]
 		for time in range(iteration):	
-			self.alpha=alpha/(time+1)
 			print('time/iteration', time, iteration,'~~~LinUCB')
 			user_index=user_array[time]
 			item_pool=item_pool_array[time]

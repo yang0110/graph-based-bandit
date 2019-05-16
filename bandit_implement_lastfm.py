@@ -23,10 +23,16 @@ from Recommender.matrix_factor_model import ProductRecommender
 input_path='../processed_data/lastfm/'
 path='../bandit_results/lastfm/'
 
-user_feature_matrix=np.load(input_path+'user_feature_matrix_100.npy')
-item_feature_matrix=np.load(input_path+'item_feature_matrix_500.npy')
-rating_matrix=np.load(input_path+'normed_rating_matrix_100_user_500_artist.npy')
-rating_matrix_mask=np.load(input_path+'rating_matrix_mask_100_user_500_artist.npy')
+
+# user_feature_matrix=np.load(input_path+'user_feature_matrix_100.npy')
+# item_feature_matrix=np.load(input_path+'item_feature_matrix_500.npy')
+# rating_matrix=np.load(input_path+'normed_rating_matrix_100_user_500_artist.npy')
+# rating_matrix_mask=np.load(input_path+'rating_matrix_mask_100_user_500_artist.npy')
+
+user_feature_matrix=np.load(input_path+'binary_payoff_user_feature_matrix_100.npy')
+item_feature_matrix=np.load(input_path+'binary_payoff_item_feature_matrix_500.npy')
+rating_matrix=np.load(input_path+'binary_rating_matrix_100_user_500_artist.npy')
+rating_matrix_mask=np.load(input_path+'binary_rating_mask_100_user_500_artist.npy')
 user_num=10
 user_feature_matrix=user_feature_matrix[:user_num]
 true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)
@@ -35,9 +41,11 @@ mask=rating_matrix_mask[:user_num]
 rating_matrix=rating*mask
 true_payoffs=true_payoffs*(1-mask)
 true_payoffs=true_payoffs+rating_matrix
-# a=true_payoffs.ravel()
-# plt.plot(a, '.')
-# plt.show()
+true_payoffs[true_payoffs>=0.5]=1.0
+true_payoffs[true_payoffs<0.5]=0.0
+a=true_payoffs.ravel()
+plt.plot(a, '.')
+plt.show()
 
 dimension=item_feature_matrix.shape[1]
 item_num=item_feature_matrix.shape[0]
@@ -65,20 +73,20 @@ noise_matrix=np.zeros((user_num, item_num))
 user_seq=np.random.choice(range(user_num), size=iteration)
 item_pool_seq=np.random.choice(range(item_num), size=(iteration, pool_size))
 
-linucb_model=LINUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha*10, delta, sigma)
-gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_lap, alpha/5.0, delta, sigma, beta)
-colin_model=COLIN(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, alpha/5.0, delta, sigma, beta)
+linucb_model=LINUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha, delta, sigma)
+gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_lap, alpha, delta, sigma, beta)
+colin_model=COLIN(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, alpha, delta, sigma, beta)
 lapucb_model=LAPUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha, delta, sigma, beta, thres)
 lapucb_sim_model=LAPUCB_SIM(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha, delta, sigma, beta, thres)
 club_model = CLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs,normed_lap, alpha, alpha_2, delta, sigma, beta)
 
 
-linucb_regret, linucb_error, linucb_beta=linucb_model.run(alpha, user_seq, item_pool_seq, iteration)
-gob_regret, gob_error, gob_beta=gob_model.run(alpha, user_seq, item_pool_seq, iteration)
-colin_regret, colin_error, colin_beta=colin_model.run(alpha,user_seq, item_pool_seq, iteration)
-lapucb_regret, lapucb_error, lapucb_beta=lapucb_model.run(alpha, user_seq, item_pool_seq, iteration)
-lapucb_sim_regret, lapucb_sim_error, lapucb_sim_beta=lapucb_sim_model.run(alpha, user_seq, item_pool_seq, iteration)
-club_regret, club_error, club_cluster_num, club_beta=club_model.run(alpha, user_seq, item_pool_seq, iteration)
+linucb_regret, linucb_error, linucb_beta=linucb_model.run(user_seq, item_pool_seq, iteration)
+gob_regret, gob_error, gob_beta=gob_model.run(user_seq, item_pool_seq, iteration)
+colin_regret, colin_error, colin_beta=colin_model.run(user_seq, item_pool_seq, iteration)
+lapucb_regret, lapucb_error, lapucb_beta=lapucb_model.run(user_seq, item_pool_seq, iteration)
+lapucb_sim_regret, lapucb_sim_error, lapucb_sim_beta=lapucb_sim_model.run(user_seq, item_pool_seq, iteration)
+club_regret, club_error, club_cluster_num, club_beta=club_model.run(user_seq, item_pool_seq, iteration)
 
 
 plt.figure(figsize=(5,5))
@@ -112,3 +120,18 @@ plt.savefig(path+'error_lastfm_user_num_%s_item_num_%s'%(user_num, item_num)+'.p
 plt.savefig(path+'error_lastfm_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
 plt.show()
 
+
+plt.figure(figsize=(5,5))
+plt.plot(linucb_beta,'-.', label='LinUCB')
+plt.plot(gob_beta, label='GOB')
+plt.plot(colin_beta, label='CoLin')
+plt.plot(lapucb_beta, '-.*', markevery=0.1, label='G-UCB')
+plt.plot(lapucb_sim_beta, '-.s', markevery=0.1, label='G-UCB SIM')
+plt.plot(club_beta, label='CLUB')
+plt.ylabel('Error', fontsize=12)
+plt.xlabel('Time', fontsize=12)
+plt.legend(loc=1, fontsize=10)
+plt.tight_layout()
+plt.savefig(path+'beta_lastfm_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
+plt.savefig(path+'beta_lastfm_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
+plt.show()
