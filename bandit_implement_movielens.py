@@ -50,9 +50,11 @@ alpha_2=0.2# edge delete CLUB
 beta=0.01 # exploration for CLUB, SCLUB and GOB
 thres=0.0
 k=3
+state=True # False for artificial dataset, True for real dataset
+
 true_adj=rbf_kernel(user_feature_matrix, gamma=0.5)
 true_adj[true_adj<=thres]=0.0
-true_normed_adj=true_adj/true_adj.sum(axis=0,keepdims=1)
+true_normed_adj=true_adj/true_adj.sum(axis=0, keepdims=1)
 true_lap=csgraph.laplacian(true_adj)
 true_normed_lap=csgraph.laplacian(true_adj, normed=False)
 true_adj_binary=true_adj.copy()
@@ -66,12 +68,12 @@ noise_matrix=np.zeros((user_num, item_num))
 user_seq=np.random.choice(range(user_num), size=iteration)
 item_pool_seq=np.random.choice(range(item_num), size=(iteration, pool_size))
 
-linucb_model=LINUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha*10, delta, sigma)
-gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_normed_lap, alpha/5.0, delta, sigma, beta)
-colin_model=COLIN(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, alpha/5.0, delta, sigma, beta)
-lapucb_model=LAPUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha/10, delta, sigma, beta, thres)
-lapucb_sim_model=LAPUCB_SIM(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha/10, delta, sigma, beta, thres)
-club_model = CLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs,normed_lap, alpha, alpha_2, delta, sigma, beta)
+linucb_model=LINUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha, delta, sigma, state)
+gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_lap_binary, alpha, delta, sigma, beta, state)
+colin_model=COLIN(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_normed_adj, alpha, delta, sigma, beta, state)
+lapucb_model=LAPUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha, delta, sigma, beta, thres, state)
+lapucb_sim_model=LAPUCB_SIM(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha, delta, sigma, beta, thres, state)
+club_model = CLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs,normed_lap, alpha, alpha_2, delta, sigma, beta, state)
 
 linucb_regret, linucb_error, linucb_beta=linucb_model.run(user_seq, item_pool_seq, iteration)
 gob_regret, gob_error, gob_beta=gob_model.run(user_seq, item_pool_seq, iteration)
@@ -79,6 +81,8 @@ colin_regret, colin_error, colin_beta=colin_model.run(user_seq, item_pool_seq, i
 lapucb_regret, lapucb_error, lapucb_beta=lapucb_model.run(user_seq, item_pool_seq, iteration)
 lapucb_sim_regret, lapucb_sim_error, lapucb_sim_beta=lapucb_sim_model.run(user_seq, item_pool_seq, iteration)
 club_regret, club_error, club_cluster_num, club_beta=club_model.run(user_seq, item_pool_seq, iteration)
+
+
 
 plt.figure(figsize=(5,5))
 plt.plot(linucb_regret,'-.', label='LinUCB')
@@ -112,17 +116,17 @@ plt.savefig(path+'error_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+
 plt.show()
 
 
-plt.figure(figsize=(5,5))
-plt.plot(linucb_beta,'-.', label='LinUCB')
-plt.plot(gob_beta, label='GOB')
-plt.plot(colin_beta, label='CoLin')
-plt.plot(lapucb_beta, '-.*', markevery=0.1, label='G-UCB')
-plt.plot(lapucb_sim_beta, '-.s', markevery=0.1, label='G-UCB SIM')
-plt.plot(club_beta, label='CLUB')
-plt.ylabel('Error', fontsize=12)
-plt.xlabel('Time', fontsize=12)
-plt.legend(loc=1, fontsize=10)
-plt.tight_layout()
-plt.savefig(path+'beta_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
-plt.savefig(path+'beta_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
-plt.show()
+# plt.figure(figsize=(5,5))
+# plt.plot(linucb_beta,'-.', label='LinUCB')
+# plt.plot(gob_beta, label='GOB')
+# plt.plot(colin_beta, label='CoLin')
+# plt.plot(lapucb_beta, '-.*', markevery=0.1, label='G-UCB')
+# plt.plot(lapucb_sim_beta, '-.s', markevery=0.1, label='G-UCB SIM')
+# plt.plot(club_beta, label='CLUB')
+# plt.ylabel('Error', fontsize=12)
+# plt.xlabel('Time', fontsize=12)
+# plt.legend(loc=1, fontsize=10)
+# plt.tight_layout()
+# plt.savefig(path+'beta_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
+# plt.savefig(path+'beta_movielens_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
+# plt.show()

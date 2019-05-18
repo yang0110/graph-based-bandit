@@ -6,7 +6,8 @@ import scipy
 
 
 class GOB():
-	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, lap, alpha, delta, sigma, beta):
+	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, lap, alpha, delta, sigma, beta, state):
+		self.state=state
 		self.dimension=dimension
 		self.user_num=user_num
 		self.item_num=item_num
@@ -43,18 +44,28 @@ class GOB():
 		item_feature_array=np.zeros((self.pool_size, self.user_num*self.dimension))
 		item_feature_array[:,user_index*self.dimension:(user_index+1)*self.dimension]=item_fs
 		estimated_payoffs=np.zeros(self.pool_size)
-		self.update_beta()
 		cov_inv=np.linalg.pinv(self.covariance)
-		for j in range(self.pool_size):
-			item_index=item_pool[j]
-			x=self.item_feature_matrix[item_index]
-			x_long=np.zeros((self.dimension*self.user_num))
-			x_long[user_index*self.dimension:(user_index+1)*self.dimension]=x
-			co_x=np.dot(np.real(self.A_inv_sqrt), x_long)
-			x_norm=np.sqrt(np.dot(np.dot(co_x, cov_inv),co_x))
-			est_y=np.dot(self.user_feature_vector, co_x)+self.beta*x_norm
-			#*np.sqrt(np.log(time+1))
-			estimated_payoffs[j]=est_y
+		if self.state==False:
+			self.update_beta()
+			for j in range(self.pool_size):
+				item_index=item_pool[j]
+				x=self.item_feature_matrix[item_index]
+				x_long=np.zeros((self.dimension*self.user_num))
+				x_long[user_index*self.dimension:(user_index+1)*self.dimension]=x
+				co_x=np.dot(np.real(self.A_inv_sqrt), x_long)
+				x_norm=np.sqrt(np.dot(np.dot(co_x, cov_inv),co_x))
+				est_y=np.dot(self.user_feature_vector, co_x)+self.beta*x_norm
+				estimated_payoffs[j]=est_y
+		else: 
+			for j in range(self.pool_size):
+				item_index=item_pool[j]
+				x=self.item_feature_matrix[item_index]
+				x_long=np.zeros((self.dimension*self.user_num))
+				x_long[user_index*self.dimension:(user_index+1)*self.dimension]=x
+				co_x=np.dot(np.real(self.A_inv_sqrt), x_long)
+				x_norm=np.sqrt(np.dot(np.dot(co_x, cov_inv),co_x))
+				est_y=np.dot(self.user_feature_vector, co_x)+self.beta*x_norm*np.sqrt(np.log(time+1))
+				estimated_payoffs[j]=est_y
 
 		max_index=np.argmax(estimated_payoffs)
 		selected_item_index=item_pool[max_index]
@@ -88,4 +99,4 @@ class GOB():
 			error=np.linalg.norm(np.dot(np.real(self.A_inv_sqrt),self.user_feature_vector)-self.true_user_feature_vector)
 			learning_error_list[time]=error
 
-		return np.array(cumulative_regret), learning_error_list, self.beta_list
+		return np.array(cumulative_regret[1:]), learning_error_list, self.beta_list

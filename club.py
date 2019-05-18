@@ -8,7 +8,8 @@ from utils import *
 from scipy.sparse.csgraph import connected_components
 
 class CLUB():
-	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, normed_L, alpha, alpha_2, delta, sigma, beta):
+	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, normed_L, alpha, alpha_2, delta, sigma, beta, state):
+		self.state=state
 		self.dimension=dimension
 		self.user_num=user_num
 		self.item_num=item_num
@@ -80,13 +81,19 @@ class CLUB():
 		cluster_cov=self.user_cluster_cov[user_index]
 		cluster_cov_inv=np.linalg.pinv(cluster_cov)
 		est_payoffs=[]
-		self.update_beta(user_index)
-		for it in item_pool:
-			x=self.item_feature_matrix[it]
-			x_norm=np.sqrt(np.dot(np.dot(x, cluster_cov_inv), x))
-			est_payoff=np.dot(self.user_cluster_feature[user_index], x)+self.beta*x_norm
-			#*np.sqrt(np.log(time+1))
-			est_payoffs.extend([est_payoff])
+		if self.state==False:
+			self.update_beta(user_index)
+			for it in item_pool:
+				x=self.item_feature_matrix[it]
+				x_norm=np.sqrt(np.dot(np.dot(x, cluster_cov_inv), x))
+				est_payoff=np.dot(self.user_cluster_feature[user_index], x)+self.beta*x_norm
+				est_payoffs.extend([est_payoff])
+		else: 
+			for it in item_pool:
+				x=self.item_feature_matrix[it]
+				x_norm=np.sqrt(np.dot(np.dot(x, cluster_cov_inv), x))
+				est_payoff=np.dot(self.user_cluster_feature[user_index], x)+self.beta*x_norm*np.sqrt(np.log(time+1))
+				est_payoffs.extend([est_payoff])
 
 		itt=np.argmax(est_payoffs)
 		id_=item_pool[itt]
@@ -114,7 +121,7 @@ class CLUB():
 			regret_error.extend([regret_error[-1]+regret])
 			learning_error.extend([np.linalg.norm(self.true_user_feature_matrix-self.user_feature)])
 			cluster_num.extend([self.cluster_num])
-		return regret_error, learning_error, cluster_num, self.beta_list
+		return regret_error[1:], learning_error, cluster_num, self.beta_list
 
 
 

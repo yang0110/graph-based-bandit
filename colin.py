@@ -5,7 +5,8 @@ from scipy.sparse import csgraph
 import scipy
 
 class COLIN():
-	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, w, alpha, delta, sigma, beta):
+	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, w, alpha, delta, sigma, beta, state):
+		self.state=state
 		self.w=w 
 		self.w_inv=np.linalg.pinv(self.w)
 		self.user_num=user_num
@@ -22,7 +23,7 @@ class COLIN():
 		self.item_feature_matrix=item_feature_matrix
 		self.user_f_matrix=np.zeros((self.dimension, self.user_num))
 		self.co_user_f_matrix=np.zeros((self.dimension, self.user_num))
-		self.true_co_user_f_vector=np.dot(self.true_user_feature_matrix, self.w).flatten()
+		self.true_co_user_f_vector=np.dot(self.true_user_feature_matrix.T, self.w).flatten()
 		self.user_f_vector=np.zeros((self.user_num*self.dimension))
 		self.big_w=np.kron(self.w.T, np.identity(self.dimension))
 		self.beta=beta
@@ -38,18 +39,31 @@ class COLIN():
 
 	def select_item(self, item_pool, user_index, time):
 		est_payoffs=np.zeros(self.pool_size)
-		self.update_beta()
-		for j in range(self.pool_size):
-			item_index=item_pool[j]
-			item_f=self.item_feature_matrix[item_index]
-			item_f_matrix=np.zeros((self.dimension, self.user_num))
-			item_f_matrix[:, user_index]=item_f 
-			item_f_vector=item_f_matrix.flatten('F')
-			co_item_f_vector=np.dot(item_f_matrix, self.w.T).flatten('F')
-			mean=np.dot(self.co_user_f_matrix.flatten('F'), item_f_vector)
-			var=np.sqrt(np.dot(np.dot(co_item_f_vector, self.V_inv), co_item_f_vector))
-			est_payoff=mean+self.beta*var*np.sqrt(np.log(time+1))
-			est_payoffs[j]=est_payoff
+		if self.state==False:
+			self.update_beta()
+			for j in range(self.pool_size):
+				item_index=item_pool[j]
+				item_f=self.item_feature_matrix[item_index]
+				item_f_matrix=np.zeros((self.dimension, self.user_num))
+				item_f_matrix[:, user_index]=item_f 
+				item_f_vector=item_f_matrix.flatten('F')
+				co_item_f_vector=np.dot(item_f_matrix, self.w.T).flatten('F')
+				mean=np.dot(self.co_user_f_matrix.flatten('F'), item_f_vector)
+				var=np.sqrt(np.dot(np.dot(co_item_f_vector, self.V_inv), co_item_f_vector))
+				est_payoff=mean+self.beta*var
+				est_payoffs[j]=est_payoff
+		else:
+			for j in range(self.pool_size):
+				item_index=item_pool[j]
+				item_f=self.item_feature_matrix[item_index]
+				item_f_matrix=np.zeros((self.dimension, self.user_num))
+				item_f_matrix[:, user_index]=item_f 
+				item_f_vector=item_f_matrix.flatten('F')
+				co_item_f_vector=np.dot(item_f_matrix, self.w.T).flatten('F')
+				mean=np.dot(self.co_user_f_matrix.flatten('F'), item_f_vector)
+				var=np.sqrt(np.dot(np.dot(co_item_f_vector, self.V_inv), co_item_f_vector))
+				est_payoff=mean+self.beta*var*np.sqrt(np.log(time+1))
+				est_payoffs[j]=est_payoff
 
 		max_index=np.argmax(est_payoffs)
 		item_index=item_pool[max_index]
@@ -84,7 +98,7 @@ class COLIN():
 			error=np.linalg.norm(self.co_user_f_matrix-self.true_user_feature_matrix.T)
 			cumulative_regret.extend([cumulative_regret[-1]+regret])
 			learning_error_list[time]=error 
-		return np.array(cumulative_regret), learning_error_list, self.beta_list
+		return np.array(cumulative_regret[1:]), learning_error_list, self.beta_list
 
 
 

@@ -6,7 +6,8 @@ import scipy
 import os 
 
 class LAPUCB_SIM(): 
-	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha, delta, sigma, beta, thres):
+	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha, delta, sigma, beta, thres, state):
+		self.state=state
 		self.dimension=dimension
 		self.user_num=user_num
 		self.item_num=item_num
@@ -33,7 +34,6 @@ class LAPUCB_SIM():
 		self.beta_list=[]
 		self.user_counter={}
 
-
 	def initialized_parameter(self):
 		for u in range(self.user_num):
 			self.user_v[u]=self.alpha*np.identity(self.dimension)
@@ -47,21 +47,29 @@ class LAPUCB_SIM():
 		b=np.linalg.det(self.alpha*np.identity(self.dimension))**(-1/2)
 		d=self.sigma*np.sqrt(2*np.log(a*b/self.delta))
 		c=self.alpha*np.sqrt(np.trace(np.linalg.pinv(self.user_v[user_index])))*np.linalg.norm(self.user_feature_matrix[user_index]-self.user_avg[user_index])
-		self.beta=c+d
+		self.beta=d+c
 		self.beta_list.extend([self.beta])
+
 
 	def select_item(self, item_pool, user_index, time):
 		item_fs=self.item_feature_matrix[item_pool]
 		estimated_payoffs=np.zeros(self.pool_size)
-		self.update_beta(user_index)
 		v_inv=np.linalg.pinv(self.user_v[user_index])
-		for j in range(self.pool_size):
-			x=item_fs[j]
-			x_norm=np.sqrt(np.dot(np.dot(x, v_inv),x))
-			mean=np.dot(x, self.user_feature_matrix[user_index])
-			est_y=mean+self.beta*x_norm
-			# *np.sqrt(np.log(time+1))
-			estimated_payoffs[j]=est_y
+		if self.state==False:
+			self.update_beta(user_index)
+			for j in range(self.pool_size):
+				x=item_fs[j]
+				x_norm=np.sqrt(np.dot(np.dot(x, v_inv),x))
+				mean=np.dot(x, self.user_feature_matrix[user_index])
+				est_y=mean+self.beta*x_norm
+				estimated_payoffs[j]=est_y
+		else:
+			for j in range(self.pool_size):
+				x=item_fs[j]
+				x_norm=np.sqrt(np.dot(np.dot(x, v_inv),x))
+				mean=np.dot(x, self.user_feature_matrix[user_index])
+				est_y=mean+self.beta*x_norm*np.sqrt(np.log(time+1))
+				estimated_payoffs[j]=est_y
 
 		max_index=np.argmax(estimated_payoffs)
 		selected_item_index=item_pool[max_index]
@@ -78,27 +86,27 @@ class LAPUCB_SIM():
 		self.user_xx[user_index]+=np.outer(x, x)
 		xx_inv=np.linalg.pinv(self.user_xx[user_index])
 		v_inv=np.linalg.pinv(self.user_v[user_index])
-		if self.user_counter[user_index]<=100:
+		if self.user_counter[user_index]<=10:
 			xx_inv=v_inv
 		else:
 			pass
 		self.user_ls[user_index]=np.dot(xx_inv, self.user_bias[user_index])
 		self.user_ridge[user_index]=np.dot(v_inv, self.user_bias[user_index])
-		self.user_avg[user_index]=np.dot(self.user_ls.T, -self.L[user_index])+self.user_ls[user_index]
-		self.user_feature_matrix[user_index]=self.user_ridge[user_index]+self.alpha*np.dot(xx_inv, self.user_avg[user_index])
+		#self.user_avg[user_index]=np.dot(self.user_ls.T, -self.L[user_index])+self.L[user_index, user_index]*self.user_ls[user_index]
+		self.user_feature_matrix[user_index]=self.user_ridge[user_index]+self.alpha*np.dot(v_inv, self.user_avg[user_index])
 
 	def update_user_feature_upon_ls(self, user_index):
-		self.user_avg[user_index]=np.dot(self.user_ls.T, -self.L[user_index])+self.user_ls[user_index]
+		self.user_avg[user_index]=np.dot(self.user_ls.T, -self.L[user_index])+self.L[user_index, user_index]*self.user_ls[user_index]
 		xx_inv=np.linalg.pinv(self.user_xx[user_index])
 		v_inv=np.linalg.pinv(self.user_v[user_index])
 		if self.user_counter[user_index]<=10:
 			xx_inv=v_inv
 		else:
 			pass
-		self.user_feature_matrix[user_index]=self.user_ridge[user_index]+self.alpha*np.dot(xx_inv, self.user_avg[user_index])
+		self.user_feature_matrix[user_index]=self.user_ridge[user_index]+self.alpha*np.dot(v_inv, self.user_avg[user_index])
 
 	def update_graph(self, user_index):
-		adj_row=rbf_kernel(self.user_ls[user_index].reshape(1,-1), self.user_ls, gamma=0.5)
+		adj_row=rbf_kernel(self.user_ridge[user_index].reshape(1,-1), self.user_ridge, gamma=0.5)
 		self.adj[user_index]=adj_row
 		self.adj[: user_index]=adj_row
 		self.adj[self.adj<=self.thres]=0.0
@@ -122,4 +130,4 @@ class LAPUCB_SIM():
 			cumulative_regret.extend([cumulative_regret[-1]+regret])
 			learning_error_list[time]=error 
 
-		return np.array(cumulative_regret), learning_error_list, self.beta_list
+		return np.array(cumulative_regret[1:]), learning_error_list, self.beta_list
