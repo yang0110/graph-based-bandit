@@ -36,14 +36,13 @@ rating_matrix_mask=np.load(input_path+'binary_rating_mask_100_user_500_artist.np
 user_num=10
 user_feature_matrix=user_feature_matrix[:user_num]
 true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)
-rating=rating_matrix[:user_num]
+true_rating=rating_matrix[:user_num]
 mask=rating_matrix_mask[:user_num]
-rating_matrix=rating*mask
+true_rating_matrix=true_rating*mask
 true_payoffs=true_payoffs*(1-mask)
-true_payoffs=true_payoffs+rating_matrix
+true_payoffs=true_payoffs+true_rating_matrix
 true_payoffs[true_payoffs>=0.5]=1.0
 true_payoffs[true_payoffs<0.5]=0.0
-
 a=true_payoffs.ravel()
 plt.plot(a, '.')
 plt.show()
@@ -54,8 +53,8 @@ pool_size=10
 iteration=1000
 sigma=0.1# noise
 delta=0.01# high probability
-alpha=0.1# regularizer
-alpha_2=0.1# edge delete CLUB
+alpha=1# regularizer
+alpha_2=0.01# edge delete CLUB
 beta=0.1 # exploration for CLUB, SCLUB and GOB
 thres=0.0
 k=3 # edge number each node SCLUb to control the sparsity
@@ -72,6 +71,7 @@ true_lap_binary=np.diag(np.sum(true_adj_binary, axis=1))-true_adj_binary
 
 adj=np.ones((user_num, user_num))
 normed_lap=csgraph.laplacian(adj, normed=True)
+normed_lap=np.zeros((user_num, user_num))
 
 noise_matrix=np.zeros((user_num, item_num))
 user_seq=np.random.choice(range(user_num), size=iteration)
@@ -124,18 +124,3 @@ plt.savefig(path+'error_lastfm_user_num_%s_item_num_%s'%(user_num, item_num)+'.p
 plt.savefig(path+'error_lastfm_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
 plt.show()
 
-
-plt.figure(figsize=(5,5))
-plt.plot(linucb_beta,'-.', label='LinUCB')
-plt.plot(gob_beta, label='GOB')
-plt.plot(colin_beta, label='CoLin')
-plt.plot(lapucb_beta, '-.*', markevery=0.1, label='G-UCB')
-plt.plot(lapucb_sim_beta, '-.s', markevery=0.1, label='G-UCB SIM')
-plt.plot(club_beta, label='CLUB')
-plt.ylabel('Error', fontsize=12)
-plt.xlabel('Time', fontsize=12)
-plt.legend(loc=1, fontsize=10)
-plt.tight_layout()
-plt.savefig(path+'beta_lastfm_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
-plt.savefig(path+'beta_lastfm_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
-plt.show()

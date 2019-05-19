@@ -68,6 +68,7 @@ club_error_matrix=np.zeros((loop, iteration))
 adj=np.ones((user_num, user_num))
 normed_lap=csgraph.laplacian(adj, normed=True)
 normed_lap=np.zeros((user_num, user_num))
+
 for l in range(loop):
 	print('loop/total_loop', l, loop)
 	linucb_model=LINUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha, delta, sigma, state)

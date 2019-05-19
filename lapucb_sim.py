@@ -86,7 +86,7 @@ class LAPUCB_SIM():
 		self.user_xx[user_index]+=np.outer(x, x)
 		xx_inv=np.linalg.pinv(self.user_xx[user_index])
 		v_inv=np.linalg.pinv(self.user_v[user_index])
-		if np.linalg.norm(xx_inv)>2*np.linalg.norm(v_inv):
+		if (self.user_counter[user_index]<=10) or (np.linalg.norm(xx_inv)>2*np.linalg.norm(v_inv)):
 			xx_inv=v_inv
 		else:
 			pass
@@ -99,7 +99,7 @@ class LAPUCB_SIM():
 		self.user_avg[user_index]=np.dot(self.user_ls.T, -self.L[user_index])+self.user_ls[user_index]
 		xx_inv=np.linalg.pinv(self.user_xx[user_index])
 		v_inv=np.linalg.pinv(self.user_v[user_index])
-		if np.linalg.norm(xx_inv)>2*np.linalg.norm(v_inv):
+		if (self.user_counter[user_index]<=10) or (np.linalg.norm(xx_inv)>2*np.linalg.norm(v_inv)):
 			xx_inv=v_inv
 		else:
 			pass

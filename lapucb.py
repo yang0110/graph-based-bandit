@@ -100,7 +100,7 @@ class LAPUCB():
 		self.user_feature_matrix=np.dot(self.cov_inv, self.bias).reshape((self.user_num, self.dimension))
 		xx_inv=np.linalg.pinv(self.user_xx[user_index])
 		v_inv=np.linalg.pinv(self.user_v[user_index])
-		if np.linalg.norm(xx_inv)>2*np.linalg.norm(v_inv):
+		if (self.user_counter[user_index]<=10) or (np.linalg.norm(xx_inv)>2*np.linalg.norm(v_inv)):
 			xx_inv=v_inv
 		else:
 			pass
