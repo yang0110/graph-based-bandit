@@ -70,7 +70,7 @@ def normalized_trace(matrix, target_trace):
 
 def calculate_graph_approximation(i, dimension, user_num, user_index, alpha, normed_lap, user_v_i, user_f_matrix_ls, user_f_matrix_ridge):
 	ridge=user_f_matrix_ridge[user_index]
-	avg=np.dot(user_f_matrix_ls.T, -normed_lap[user_index])+user_f_matrix_ls[user_index]
+	avg=np.dot(user_f_matrix_ls.T, -normed_lap[user_index])+normed_lap[user_index, user_index]*user_f_matrix_ls[user_index]
 	graph=ridge+alpha*np.dot(np.linalg.pinv(user_v_i), avg)
 	return graph 
 

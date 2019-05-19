@@ -39,6 +39,7 @@ class COLIN():
 
 	def select_item(self, item_pool, user_index, time):
 		est_payoffs=np.zeros(self.pool_size)
+		self.V_inv=np.linalg.pinv(self.V)
 		if self.state==False:
 			self.update_beta()
 			for j in range(self.pool_size):

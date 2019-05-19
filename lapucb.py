@@ -100,15 +100,15 @@ class LAPUCB():
 		self.user_feature_matrix=np.dot(self.cov_inv, self.bias).reshape((self.user_num, self.dimension))
 		xx_inv=np.linalg.pinv(self.user_xx[user_index])
 		v_inv=np.linalg.pinv(self.user_v[user_index])
-		if self.user_counter[user_index]<=20:
+		if np.linalg.norm(xx_inv)>2*np.linalg.norm(v_inv):
 			xx_inv=v_inv
 		else:
 			pass
 		self.user_ls[user_index]=np.dot(xx_inv, self.user_bias[user_index])
-		self.user_avg[user_index]=np.dot(self.user_ls.T, -self.L[user_index])+self.L[user_index, user_index]*self.user_ls[user_index]
+		self.user_avg[user_index]=np.dot(self.user_ls.T, -self.L[user_index])+self.user_ls[user_index]
 
 	def update_graph(self, user_index):
-		adj_row=rbf_kernel(self.user_ridge[user_index].reshape(1,-1), self.user_ridge, gamma=0.5)
+		adj_row=rbf_kernel(self.user_ls[user_index].reshape(1,-1), self.user_ls, gamma=0.5)
 		self.adj[user_index]=adj_row
 		self.adj[:,user_index]=adj_row
 		self.adj[self.adj<=self.thres]=0.0

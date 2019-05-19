@@ -86,20 +86,20 @@ class LAPUCB_SIM():
 		self.user_xx[user_index]+=np.outer(x, x)
 		xx_inv=np.linalg.pinv(self.user_xx[user_index])
 		v_inv=np.linalg.pinv(self.user_v[user_index])
-		if self.user_counter[user_index]<=10:
+		if np.linalg.norm(xx_inv)>2*np.linalg.norm(v_inv):
 			xx_inv=v_inv
 		else:
 			pass
 		self.user_ls[user_index]=np.dot(xx_inv, self.user_bias[user_index])
 		self.user_ridge[user_index]=np.dot(v_inv, self.user_bias[user_index])
-		#self.user_avg[user_index]=np.dot(self.user_ls.T, -self.L[user_index])+self.L[user_index, user_index]*self.user_ls[user_index]
+		self.user_avg[user_index]=np.dot(self.user_ls.T, -self.L[user_index])+self.user_ls[user_index]
 		self.user_feature_matrix[user_index]=self.user_ridge[user_index]+self.alpha*np.dot(v_inv, self.user_avg[user_index])
 
 	def update_user_feature_upon_ls(self, user_index):
-		self.user_avg[user_index]=np.dot(self.user_ls.T, -self.L[user_index])+self.L[user_index, user_index]*self.user_ls[user_index]
+		self.user_avg[user_index]=np.dot(self.user_ls.T, -self.L[user_index])+self.user_ls[user_index]
 		xx_inv=np.linalg.pinv(self.user_xx[user_index])
 		v_inv=np.linalg.pinv(self.user_v[user_index])
-		if self.user_counter[user_index]<=10:
+		if np.linalg.norm(xx_inv)>2*np.linalg.norm(v_inv):
 			xx_inv=v_inv
 		else:
 			pass

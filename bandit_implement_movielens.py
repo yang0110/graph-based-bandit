@@ -63,7 +63,7 @@ true_lap_binary=np.diag(np.sum(true_adj_binary, axis=1))-true_adj_binary
 
 adj=np.ones((user_num, user_num))
 normed_lap=csgraph.laplacian(adj, normed=True)
-
+normed_lap=np.zeros((user_num, user_num))
 noise_matrix=np.zeros((user_num, item_num))
 user_seq=np.random.choice(range(user_num), size=iteration)
 item_pool_seq=np.random.choice(range(item_num), size=(iteration, pool_size))

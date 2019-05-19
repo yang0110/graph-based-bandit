@@ -24,8 +24,8 @@ user_num=20
 dimension=10
 item_num=500
 pool_size=10
-iteration=1000
-loop=1
+iteration=2000
+loop=5
 sigma=0.1# noise
 delta=0.1# high probability
 alpha=1# regularizer
@@ -38,7 +38,6 @@ state=False # False for artificial dataset, True for real dataset
 user_seq=np.random.choice(range(user_num), size=iteration)
 item_pool_seq=np.random.choice(range(item_num), size=(iteration, pool_size))
 item_feature_matrix=Normalizer().fit_transform(np.random.normal(size=(item_num, dimension)))
-
 true_adj=RBF_graph(user_num, dimension, thres=thres, gamma=0.5)
 #true_adj=BA_graph(user_num, 3)
 #true_adj=ER_graph(user_num, 0.5)
@@ -57,6 +56,8 @@ linucb_regret_matrix=np.zeros((loop, iteration))
 linucb_error_matrix=np.zeros((loop, iteration))
 gob_regret_matrix=np.zeros((loop, iteration))
 gob_error_matrix=np.zeros((loop, iteration))
+colin_regret_matrix=np.zeros((loop, iteration))
+colin_error_matrix=np.zeros((loop, iteration))
 lapucb_regret_matrix=np.zeros((loop, iteration))
 lapucb_error_matrix=np.zeros((loop, iteration))
 lapucb_sim_regret_matrix=np.zeros((loop, iteration))
@@ -64,13 +65,14 @@ lapucb_sim_error_matrix=np.zeros((loop, iteration))
 club_regret_matrix=np.zeros((loop, iteration))
 club_error_matrix=np.zeros((loop, iteration))
 
+adj=np.ones((user_num, user_num))
+normed_lap=csgraph.laplacian(adj, normed=True)
+normed_lap=np.zeros((user_num, user_num))
 for l in range(loop):
 	print('loop/total_loop', l, loop)
-	adj=np.ones((user_num, user_num))
-	normed_lap=csgraph.laplacian(adj, normed=True)
 	linucb_model=LINUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha, delta, sigma, state)
-	gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_lap_binary, alpha/10.0, delta, sigma, beta, state)
-	colin_model=COLIN(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_normed_adj, alpha/10.0, delta, sigma, beta, state)
+	gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_lap_binary, alpha/10, delta, sigma, beta, state)
+	colin_model=COLIN(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, alpha/10, delta, sigma, beta, state)
 	lapucb_model=LAPUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha, delta, sigma, beta, thres, state)
 	lapucb_sim_model=LAPUCB_SIM(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha, delta, sigma, beta, thres, state)
 	club_model = CLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs,true_normed_lap, alpha, alpha_2, delta, sigma, beta, state)
@@ -84,6 +86,7 @@ for l in range(loop):
 
 	linucb_regret_matrix[l], linucb_error_matrix[l]=linucb_regret, linucb_error
 	gob_regret_matrix[l], gob_error_matrix[l]=gob_regret, gob_error
+	colin_regret_matrix[l], colin_error_matrix[l]=colin_regret, colin_error
 	lapucb_regret_matrix[l], lapucb_error_matrix[l]=lapucb_regret, lapucb_error
 	lapucb_sim_regret_matrix[l], lapucb_sim_error_matrix[l]=lapucb_sim_regret, lapucb_sim_error
 	club_regret_matrix[l], club_error_matrix[l]=club_regret, club_error
@@ -93,6 +96,8 @@ linucb_regret=np.mean(linucb_regret_matrix, axis=0)
 linucb_error=np.mean(linucb_error_matrix, axis=0)
 gob_regret=np.mean(gob_regret_matrix, axis=0)
 gob_error=np.mean(gob_error_matrix, axis=0)
+colin_regret=np.mean(colin_regret_matrix, axis=0)
+colin_error=np.mean(colin_error_matrix, axis=0)
 lapucb_regret=np.mean(lapucb_regret_matrix, axis=0)
 lapucb_error=np.mean(lapucb_error_matrix, axis=0)
 lapucb_sim_regret=np.mean(lapucb_sim_regret_matrix, axis=0)
@@ -148,11 +153,11 @@ plt.show()
 
 
 plt.figure(figsize=(5,5))
-plt.plot(linucb_beta, '-.', label='LINUCB')
+plt.plot(linucb_beta, '-.', label='LinUCB')
 plt.plot(gob_beta, label='GOB')
 plt.plot(colin_beta, label='CoLin')
-plt.plot(lapucb_beta, '-*', markevery=0.1, label='LAPUCB')
-plt.plot(lapucb_sim_beta, '-*', markevery=0.1, label='LAPUCB SIM')
+plt.plot(lapucb_beta, '-*', markevery=0.1, label='G-UCB')
+plt.plot(lapucb_sim_beta, '-*', markevery=0.1, label='G-UCB SIM')
 plt.plot(club_beta, label='CLUB')
 plt.ylabel('beta', fontsize=12)
 plt.xlabel('Time', fontsize=12)
