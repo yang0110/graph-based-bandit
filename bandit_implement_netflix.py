@@ -36,9 +36,9 @@ true_rating_matrix=true_rating*mask
 true_payoffs=true_payoffs*(1-mask)
 true_payoffs=true_payoffs+true_rating_matrix
 true_payoffs=np.round(true_payoffs, decimals=1)
-a=true_payoffs.ravel()
-plt.plot(a, '.')
-plt.show()
+# a=true_payoffs.ravel()
+# plt.plot(a, '.')
+# plt.show()
 
 dimension=item_feature_matrix.shape[1]
 item_num=item_feature_matrix.shape[0]
@@ -54,36 +54,24 @@ k=3 # edge number each node SCLUb to control the sparsity
 state=True
 
 true_adj=rbf_kernel(user_feature_matrix, gamma=0.5)
-true_adj[true_adj<=thres]=0.0
-true_normed_adj=true_adj/true_adj.sum(axis=0,keepdims=1)
-true_lap=csgraph.laplacian(true_adj)
-true_adj_binary=true_adj.copy()
-true_adj_binary[true_adj_binary>0]=1
-true_lap_binary=np.diag(np.sum(true_adj_binary, axis=1))-true_adj_binary
-
-adj=np.ones((user_num, user_num))
-normed_lap=csgraph.laplacian(adj, normed=True)
-normed_lap=np.zeros((user_num, user_num))
 
 noise_matrix=np.zeros((user_num, item_num))
 user_seq=np.random.choice(range(user_num), size=iteration)
 item_pool_seq=np.random.choice(range(item_num), size=(iteration, pool_size))
 
 linucb_model=LINUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha, delta, sigma, state)
-gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_lap, alpha, delta, sigma, beta, state)
-colin_model=COLIN(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, alpha, delta, sigma, beta, state)
-lapucb_model=LAPUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha, delta, sigma, beta, thres, state)
-lapucb_sim_model=LAPUCB_SIM(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha, delta, sigma, beta, thres, state)
-club_model = CLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs,normed_lap, alpha, alpha_2, delta, sigma, beta, state)
+gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs,true_adj, alpha, delta, sigma, beta, state)
+colin_model=COLIN(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs,true_adj, alpha, delta, sigma, beta, state)
+lapucb_model=LAPUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs,true_adj, noise_matrix, alpha, delta, sigma, beta, thres, state)
+lapucb_sim_model=LAPUCB_SIM(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs,true_adj, noise_matrix,  alpha, delta, sigma, beta, thres, state)
+club_model = CLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha, alpha_2, delta, sigma, beta, state)
 
 linucb_regret, linucb_error, linucb_beta=linucb_model.run(user_seq, item_pool_seq, iteration)
-gob_regret, gob_error, gob_beta=gob_model.run(user_seq, item_pool_seq, iteration)
-colin_regret, colin_error, colin_beta=colin_model.run(user_seq, item_pool_seq, iteration)
-lapucb_regret, lapucb_error, lapucb_beta=lapucb_model.run(user_seq, item_pool_seq, iteration)
-lapucb_sim_regret, lapucb_sim_error, lapucb_sim_beta=lapucb_sim_model.run(user_seq, item_pool_seq, iteration)
+gob_regret, gob_error, gob_beta, gob_graph=gob_model.run(user_seq, item_pool_seq, iteration)
+colin_regret, colin_error, colin_beta, colin_graph=colin_model.run(user_seq, item_pool_seq, iteration)
+lapucb_regret, lapucb_error, lapucb_beta, lapucb_graph=lapucb_model.run(user_seq, item_pool_seq, iteration)
+lapucb_sim_regret, lapucb_sim_error, lapucb_sim_beta, lapucb_sim_graph=lapucb_sim_model.run(user_seq, item_pool_seq, iteration)
 club_regret, club_error, club_cluster_num, club_beta=club_model.run(user_seq, item_pool_seq, iteration)
-
-
 
 plt.figure(figsize=(5,5))
 plt.plot(linucb_regret,'-.', label='LinUCB')
@@ -117,3 +105,15 @@ plt.savefig(path+'error_netflix_user_num_%s_item_num_%s'%(user_num, 500)+'.eps',
 plt.show()
 
 
+plt.figure(figsize=(5,5))
+plt.plot(gob_graph, label='GOB')
+plt.plot(colin_graph, label='CoLin')
+plt.plot(lapucb_graph, '-*', markevery=0.1, label='G-UCB')
+plt.plot(lapucb_sim_graph, '-s', markevery=0.1, label='G-UCB SIM')
+plt.ylabel('Error', fontsize=12)
+plt.xlabel('Time', fontsize=12)
+plt.legend(loc=1, fontsize=10)
+plt.tight_layout()
+plt.savefig(path+'graph_error_netflix_user_num_%s_item_num_%s'%(user_num, item_num)+'.png', dpi=300)
+plt.savefig(path+'graph_error_netflix_user_num_%s_item_num_%s'%(user_num, item_num)+'.eps', dpi=300)
+plt.show()

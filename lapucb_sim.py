@@ -6,7 +6,8 @@ import scipy
 import os 
 
 class LAPUCB_SIM(): 
-	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, noise_matrix, normed_lap, alpha, delta, sigma, beta, thres, state):
+	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, true_adj, noise_matrix, alpha, delta, sigma, beta, thres, state):
+		self.true_adj=true_adj
 		self.state=state
 		self.dimension=dimension
 		self.user_num=user_num
@@ -18,7 +19,7 @@ class LAPUCB_SIM():
 		self.noise_matrix=noise_matrix
 		self.user_feature_matrix=np.zeros((self.user_num, self.dimension))
 		self.thres=thres
-		self.adj=np.ones((self.user_num, self.user_num))
+		self.adj=np.identity(self.user_num)
 		normed_lap=csgraph.laplacian(self.adj, normed=True)
 		self.L=normed_lap+0.01*np.identity(self.user_num)
 		self.alpha=alpha
@@ -33,6 +34,9 @@ class LAPUCB_SIM():
 		self.user_ls=np.zeros((self.user_num, self.dimension))
 		self.beta_list=[]
 		self.user_counter={}
+		self.graph_error=[]
+
+
 
 	def initialized_parameter(self):
 		for u in range(self.user_num):
@@ -49,7 +53,6 @@ class LAPUCB_SIM():
 		c=self.alpha*np.sqrt(np.trace(np.linalg.pinv(self.user_v[user_index])))*np.linalg.norm(self.user_feature_matrix[user_index]-self.user_avg[user_index])
 		self.beta=d+c
 		self.beta_list.extend([self.beta])
-
 
 	def select_item(self, item_pool, user_index, time):
 		item_fs=self.item_feature_matrix[item_pool]
@@ -81,9 +84,9 @@ class LAPUCB_SIM():
 
 	def update_user_feature_upon_ridge(self, true_payoff, selected_item_feature, user_index):
 		x=selected_item_feature
+		self.user_xx[user_index]+=np.outer(x, x)
 		self.user_v[user_index]+=np.outer(x, x)
 		self.user_bias[user_index]+=true_payoff*x
-		self.user_xx[user_index]+=np.outer(x, x)
 		xx_inv=np.linalg.pinv(self.user_xx[user_index])
 		v_inv=np.linalg.pinv(self.user_v[user_index])
 		if (self.user_counter[user_index]<=10) or (np.linalg.norm(xx_inv)>2*np.linalg.norm(v_inv)):
@@ -97,21 +100,18 @@ class LAPUCB_SIM():
 
 	def update_user_feature_upon_ls(self, user_index):
 		self.user_avg[user_index]=np.dot(self.user_ls.T, -self.L[user_index])+self.user_ls[user_index]
-		xx_inv=np.linalg.pinv(self.user_xx[user_index])
 		v_inv=np.linalg.pinv(self.user_v[user_index])
-		if (self.user_counter[user_index]<=10) or (np.linalg.norm(xx_inv)>2*np.linalg.norm(v_inv)):
-			xx_inv=v_inv
-		else:
-			pass
 		self.user_feature_matrix[user_index]=self.user_ridge[user_index]+self.alpha*np.dot(v_inv, self.user_avg[user_index])
 
 	def update_graph(self, user_index):
-		adj_row=rbf_kernel(self.user_ridge[user_index].reshape(1,-1), self.user_ridge, gamma=0.5)
-		self.adj[user_index]=adj_row
-		self.adj[: user_index]=adj_row
-		self.adj[self.adj<=self.thres]=0.0
+		# adj_row=rbf_kernel(self.user_feature_matrix[user_index].reshape(1,-1), self.user_feature_matrix, gamma=0.5)
+		# self.adj[user_index]=adj_row
+		# self.adj[:,user_index]=adj_row
+		self.adj=rbf_kernel(self.user_feature_matrix, gamma=0.5)
 		normed_lap=csgraph.laplacian(self.adj, normed=True)
 		self.L=normed_lap+0.01*np.identity(self.user_num)
+		graph_error=np.linalg.norm(self.adj-self.true_adj)
+		self.graph_error.extend([graph_error])
 
 	def run(self, user_array, item_pool_array, iteration):
 		self.initialized_parameter()
@@ -130,4 +130,4 @@ class LAPUCB_SIM():
 			cumulative_regret.extend([cumulative_regret[-1]+regret])
 			learning_error_list[time]=error 
 
-		return np.array(cumulative_regret[1:]), learning_error_list, self.beta_list
+		return np.array(cumulative_regret[1:]), learning_error_list, self.beta_list, self.graph_error

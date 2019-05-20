@@ -8,7 +8,7 @@ from utils import *
 from scipy.sparse.csgraph import connected_components
 
 class CLUB():
-	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, normed_L, alpha, alpha_2, delta, sigma, beta, state):
+	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, alpha, alpha_2, delta, sigma, beta, state):
 		self.state=state
 		self.dimension=dimension
 		self.user_num=user_num
