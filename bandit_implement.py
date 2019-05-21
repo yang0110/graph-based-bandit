@@ -9,7 +9,7 @@ from scipy.sparse import csgraph
 import scipy
 import os 
 from sklearn import datasets
-os.chdir('C:/Kaige_Research/Code/graph_bandit/code/')
+#os.chdir('~/Documents/research/graph_bandit/code/')
 from linucb import LINUCB
 from gob import GOB 
 from colin import COLIN
@@ -20,93 +20,27 @@ from club import CLUB
 from utils import *
 path='../bandit_results/simulated/'
 
-user_num=10
+user_num=20
 dimension=10
 item_num=500
 pool_size=10
 iteration=1000
 loop=1
-sigma=0.1# noise
-delta=0.1# high probability
-alpha=1 # regularizer
-alpha_2=0.2# edge delete CLUB
+sigma=0.0# noise
+delta=0.01# high probability
+alpha=0.5# regularizer
+alpha_2=0.05# edge delete CLUB
 beta=0.01 # exploration for CLUB, SCLUB and GOB
 thres=0.0
-k=3 # edge number each node SCLUB to control the sparsity
 state=False # False for artificial dataset, True for real dataset
+lambda_list=[0,1,3,5]
 
 user_seq=np.random.choice(range(user_num), size=iteration)
 item_pool_seq=np.random.choice(range(item_num), size=(iteration, pool_size))
 item_feature_matrix=Normalizer().fit_transform(np.random.normal(size=(item_num, dimension)))
 true_adj=RBF_graph(user_num, dimension, thres=thres, gamma=0.5)
-#true_adj=BA_graph(user_num, 3)
-#true_adj=ER_graph(user_num, 0.5)
 true_lap=csgraph.laplacian(true_adj, normed=False)
-
-user_feature_matrix=dictionary_matrix_generator(user_num, dimension, true_lap, 2)
-true_adj=rbf_kernel(user_feature_matrix, gamma=0.5)
-
 noise_matrix=np.random.normal(scale=sigma, size=(user_num, item_num))
-true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)+noise_matrix
-
-linucb_regret_matrix=np.zeros((loop, iteration))
-linucb_error_matrix=np.zeros((loop, iteration))
-gob_regret_matrix=np.zeros((loop, iteration))
-gob_error_matrix=np.zeros((loop, iteration))
-colin_regret_matrix=np.zeros((loop, iteration))
-colin_error_matrix=np.zeros((loop, iteration))
-lapucb_regret_matrix=np.zeros((loop, iteration))
-lapucb_error_matrix=np.zeros((loop, iteration))
-lapucb_sim_regret_matrix=np.zeros((loop, iteration))
-lapucb_sim_error_matrix=np.zeros((loop, iteration))
-club_regret_matrix=np.zeros((loop, iteration))
-club_error_matrix=np.zeros((loop, iteration))
-gob_graph_matrix=np.zeros((loop, iteration))
-colin_graph_matrix=np.zeros((loop, iteration))
-lapucb_graph_matrix=np.zeros((loop, iteration))
-lapucb_sim_graph_matrix=np.zeros((loop, iteration))
-
-
-for l in range(loop):
-	print('loop/total_loop', l, loop)
-	linucb_model=LINUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha, delta, sigma, state)
-	gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, alpha, delta, sigma, beta, state)
-	colin_model=COLIN(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, alpha, delta, sigma, beta, state)
-	lapucb_model=LAPUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, noise_matrix, alpha, delta, sigma, beta, thres, state)
-	lapucb_sim_model=LAPUCB_SIM(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, noise_matrix, alpha, delta, sigma, beta, thres, state)
-	club_model = CLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha, alpha_2, delta, sigma, beta, state)
-
-	linucb_regret, linucb_error, linucb_beta=linucb_model.run(user_seq, item_pool_seq, iteration)
-	gob_regret, gob_error, gob_beta, gob_graph=gob_model.run(user_seq, item_pool_seq, iteration)
-	#colin_regret, colin_error, colin_beta, colin_graph=colin_model.run(user_seq, item_pool_seq, iteration)
-	lapucb_regret, lapucb_error, lapucb_beta, lapucb_graph=lapucb_model.run(user_seq, item_pool_seq, iteration)
-	lapucb_sim_regret, lapucb_sim_error, lapucb_sim_beta, lapucb_sim_graph=lapucb_sim_model.run( user_seq, item_pool_seq, iteration)
-	club_regret, club_error,club_cluster_num, club_beta=club_model.run(user_seq, item_pool_seq, iteration)
-
-	linucb_regret_matrix[l], linucb_error_matrix[l]=linucb_regret, linucb_error
-	gob_regret_matrix[l], gob_error_matrix[l], gob_graph_matrix[l]=gob_regret, gob_error, gob_graph
-	#colin_regret_matrix[l], colin_error_matrix[l], colin_graph_matrix[l]=colin_regret, colin_error, colin_graph
-	lapucb_regret_matrix[l], lapucb_error_matrix[l], lapucb_graph_matrix[l]=lapucb_regret, lapucb_error, lapucb_graph
-	lapucb_sim_regret_matrix[l], lapucb_sim_error_matrix[l], lapucb_sim_graph_matrix[l]=lapucb_sim_regret, lapucb_sim_error, lapucb_sim_graph
-	club_regret_matrix[l], club_error_matrix[l]=club_regret, club_error
-
-
-linucb_regret=np.mean(linucb_regret_matrix, axis=0)
-linucb_error=np.mean(linucb_error_matrix, axis=0)
-gob_regret=np.mean(gob_regret_matrix, axis=0)
-gob_error=np.mean(gob_error_matrix, axis=0)
-#colin_regret=np.mean(colin_regret_matrix, axis=0)
-#colin_error=np.mean(colin_error_matrix, axis=0)
-lapucb_regret=np.mean(lapucb_regret_matrix, axis=0)
-lapucb_error=np.mean(lapucb_error_matrix, axis=0)
-lapucb_sim_regret=np.mean(lapucb_sim_regret_matrix, axis=0)
-lapucb_sim_error=np.mean(lapucb_sim_error_matrix, axis=0)
-club_regret=np.mean(club_regret_matrix, axis=0)
-club_error=np.mean(club_error_matrix, axis=0)
-gob_graph=np.mean(gob_graph_matrix, axis=0)
-#colin_graph=np.mean(colin_graph_matrix, axis=0)
-lapucb_graph=np.mean(lapucb_graph_matrix, axis=0)
-lapucb_sim_graph=np.mean(lapucb_sim_graph_matrix, axis=0)
 
 np.fill_diagonal(true_adj,0)
 true_adj=np.round(true_adj,decimals=2)
@@ -117,79 +51,101 @@ edge_color=edge_weight[edge_weight>0]
 pos = nx.spring_layout(graph)
 plt.figure(figsize=(5,5))
 nodes=nx.draw_networkx_nodes(graph, pos, node_size=10, node_color='y')
-edges=nx.draw_networkx_edges(graph, pos, width=0.1, alpha=1, edge_color='k')
-#nx.draw_networkx_labels(graph, pos, font_color='k')
-edge_labels=nx.draw_networkx_edge_labels(graph,pos, edge_labels=labels, font_size=8)
+edges=nx.draw_networkx_edges(graph, pos, width=0.05, alpha=1, edge_color='k')
+edge_labels=nx.draw_networkx_edge_labels(graph,pos, edge_labels=labels, font_size=5)
 plt.axis('off')
 plt.savefig(path+'network_rbf'+'.png', dpi=300)
 plt.savefig(path+'network_rbf'+'.eps', dpi=300)
-plt.show()
+plt.clf()
 
-plt.figure(figsize=(5,5))
-plt.plot(linucb_regret,'-.', label='LinUCB')
-plt.plot(gob_regret, label='GOB')
-#plt.plot(colin_regret, label='CoLin')
-plt.plot(lapucb_regret, '-*', markevery=0.1, label='G-UCB')
-plt.plot(lapucb_sim_regret, '-*', markevery=0.1, label='G-UCB SIM')
-plt.plot(club_regret, label='CLUB')
-plt.ylabel('Cumulative Regret', fontsize=12)
-plt.xlabel('Time', fontsize=12)
-plt.legend(loc=2, fontsize=10)
-plt.tight_layout()
-plt.savefig(path+'cum_regret_rbf'+'.png', dpi=300)
-plt.savefig(path+'cum_regret_rbf'+'.eps', dpi=300)
-plt.show()
- 
-plt.figure(figsize=(5,5))
-plt.plot(linucb_error,'-.', label='LinUCB')
-plt.plot(gob_error, label='GOB')
-#plt.plot(colin_error, label='CoLin')
-plt.plot(lapucb_error, '-*', markevery=0.1, label='G-UCB')
-plt.plot(lapucb_sim_error, '-*', markevery=0.1, label='G-UCB SIM')
-plt.plot(club_error, label='CLUB')
-plt.ylabel('Error', fontsize=12)
-plt.xlabel('Time', fontsize=12)
-plt.legend(loc=1, fontsize=10)
-plt.tight_layout()
-plt.savefig(path+'bandit_learning_error_rbf'+'.png', dpi=300)
-plt.savefig(path+'bandit_learning_error_rbf'+'.eps', dpi=300)
-plt.show()
-
-n=15
-plt.figure(figsize=(5,5))
-plt.plot(gob_graph[n:], label='GOB')
-#plt.plot(colin_graph[n:], label='CoLin')
-plt.plot(lapucb_graph[n:], '-*', markevery=0.1, label='G-UCB')
-plt.plot(lapucb_sim_graph[n:], '-*', markevery=0.1, label='G-UCB SIM')
-plt.ylabel('Graph Error', fontsize=12)
-plt.xlabel('Time', fontsize=12)
-plt.legend(loc=1, fontsize=10)
-plt.tight_layout()
-plt.savefig(path+'bandit_learning_graph_error_rbf'+'.png', dpi=300)
-plt.savefig(path+'bandit_learning_graph_error_rbf'+'.eps', dpi=300)
-plt.show()
-
-plt.figure(figsize=(5,5))
-plt.plot(linucb_beta, '-.', label='LinUCB')
-plt.plot(gob_beta, label='GOB')
-#plt.plot(colin_beta, label='CoLin')
-plt.plot(lapucb_beta, '-*', markevery=0.1, label='G-UCB')
-plt.plot(lapucb_sim_beta, '-*', markevery=0.1, label='G-UCB SIM')
-plt.plot(club_beta, label='CLUB')
-plt.ylabel('beta', fontsize=12)
-plt.xlabel('Time', fontsize=12)
-plt.legend(loc=1, fontsize=10)
-plt.tight_layout()
-plt.savefig(path+'bandit_beta_rbf'+'.png', dpi=300)
-plt.savefig(path+'bandit_beta_rbf'+'.eps', dpi=300)
-plt.show()
+for lambda_ in lambda_list:
+	user_feature_matrix=dictionary_matrix_generator(user_num, dimension, true_lap, lambda_)
+	true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)+noise_matrix
+	smoothness=np.trace(np.dot(np.dot(user_feature_matrix.T, true_lap), user_feature_matrix))
+	linucb_regret_matrix=np.zeros((loop, iteration))
+	linucb_error_matrix=np.zeros((loop, iteration))
+	gob_regret_matrix=np.zeros((loop, iteration))
+	gob_error_matrix=np.zeros((loop, iteration))
+	lapucb_regret_matrix=np.zeros((loop, iteration))
+	lapucb_error_matrix=np.zeros((loop, iteration))
+	lapucb_sim_regret_matrix=np.zeros((loop, iteration))
+	lapucb_sim_error_matrix=np.zeros((loop, iteration))
+	club_regret_matrix=np.zeros((loop, iteration))
+	club_error_matrix=np.zeros((loop, iteration))
+	gob_graph_matrix=np.zeros((loop, iteration))
+	lapucb_graph_matrix=np.zeros((loop, iteration))
+	lapucb_sim_graph_matrix=np.zeros((loop, iteration))
 
 
-plt.figure(figsize=(5,5))
-plt.plot(club_cluster_num, label='CLUB')
-plt.legend(loc=0)
-plt.ylabel('cluster num')
-plt.show()
+	for l in range(loop):
+		print('loop/total_loop', l, loop)
+		linucb_model=LINUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha, delta, sigma, state)
+		gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, alpha, delta, sigma, beta, state)
+		lapucb_model=LAPUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, noise_matrix, alpha, delta, sigma, beta, thres, state)
+		lapucb_sim_model=LAPUCB_SIM(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, noise_matrix, alpha, delta, sigma, beta, thres, state)
+		club_model = CLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha, alpha_2, delta, sigma, beta, state)
+
+		linucb_regret, linucb_error, linucb_beta=linucb_model.run(user_seq, item_pool_seq, iteration)
+		gob_regret, gob_error, gob_beta, gob_graph=gob_model.run(user_seq, item_pool_seq, iteration)
+		lapucb_regret, lapucb_error, lapucb_beta, lapucb_graph=lapucb_model.run(user_seq, item_pool_seq, iteration)
+		lapucb_sim_regret, lapucb_sim_error, lapucb_sim_beta, lapucb_sim_graph=lapucb_sim_model.run( user_seq, item_pool_seq, iteration)
+		club_regret, club_error,club_cluster_num, club_beta=club_model.run(user_seq, item_pool_seq, iteration)
+
+		linucb_regret_matrix[l], linucb_error_matrix[l]=linucb_regret, linucb_error
+		gob_regret_matrix[l], gob_error_matrix[l], gob_graph_matrix[l]=gob_regret, gob_error, gob_graph
+		lapucb_regret_matrix[l], lapucb_error_matrix[l], lapucb_graph_matrix[l]=lapucb_regret, lapucb_error, lapucb_graph
+		lapucb_sim_regret_matrix[l], lapucb_sim_error_matrix[l], lapucb_sim_graph_matrix[l]=lapucb_sim_regret, lapucb_sim_error, lapucb_sim_graph
+		club_regret_matrix[l], club_error_matrix[l]=club_regret, club_error
+
+
+	linucb_regret=np.mean(linucb_regret_matrix, axis=0)
+	linucb_error=np.mean(linucb_error_matrix, axis=0)
+	gob_regret=np.mean(gob_regret_matrix, axis=0)
+	gob_error=np.mean(gob_error_matrix, axis=0)
+	gob_graph=np.mean(gob_graph_matrix, axis=0)
+
+
+	lapucb_regret=np.mean(lapucb_regret_matrix, axis=0)
+	lapucb_error=np.mean(lapucb_error_matrix, axis=0)
+	lapucb_graph=np.mean(lapucb_graph_matrix, axis=0)
+
+	lapucb_sim_regret=np.mean(lapucb_sim_regret_matrix, axis=0)
+	lapucb_sim_error=np.mean(lapucb_sim_error_matrix, axis=0)
+	lapucb_sim_graph=np.mean(lapucb_sim_graph_matrix, axis=0)
+
+	club_regret=np.mean(club_regret_matrix, axis=0)
+	club_error=np.mean(club_error_matrix, axis=0)
+
+
+
+	plt.figure(figsize=(5,5))
+	plt.plot(linucb_regret,'-.', label='LinUCB')
+	plt.plot(gob_regret, label='GOB')
+	plt.plot(lapucb_regret, '-*', markevery=0.1, label='G-UCB')
+	plt.plot(lapucb_sim_regret, '-*', markevery=0.1, label='G-UCB SIM')
+	plt.plot(club_regret, label='CLUB')
+	plt.ylabel('Cumulative Regret', fontsize=12)
+	plt.xlabel('Time', fontsize=12)
+	plt.legend(loc=2, fontsize=10)
+	plt.tight_layout()
+	plt.savefig(path+'cum_regret_rbf_noise_%s_smoothness_%s_lambda_%s'%(int(sigma*10), int(np.round(smoothness, decimals=2)*100), lambda_)+'.png', dpi=300)
+	plt.savefig(path+'cum_regret_rbf_noise_%s_smoothness_%s_lambda_%s'%(int(sigma*10), int(np.round(smoothness, decimals=2)*100), lambda_)+'.eps', dpi=300)
+	plt.show()
+	 
+	plt.figure(figsize=(5,5))
+	plt.plot(linucb_error,'-.', label='LinUCB')
+	plt.plot(gob_error, label='GOB')
+	plt.plot(lapucb_error, '-*', markevery=0.1, label='G-UCB')
+	plt.plot(lapucb_sim_error, '-*', markevery=0.1, label='G-UCB SIM')
+	plt.plot(club_error, label='CLUB')
+	plt.ylabel('Error', fontsize=12)
+	plt.xlabel('Time', fontsize=12)
+	plt.legend(loc=1, fontsize=10)
+	plt.tight_layout()
+	plt.savefig(path+'bandit_learning_error_rbf_noise_%s_smoothness_%s_lambda_%s'%(int(sigma*10), int(np.round(smoothness, decimals=2)*100), lambda_)+'.png', dpi=300)
+	plt.savefig(path+'bandit_learning_error_rbf_noise_%s_smoothness_%s_lambda_%s'%(int(sigma*10), int(np.round(smoothness, decimals=2)*100), lambda_)+'.eps', dpi=300)
+	plt.show()
+
 
 
 

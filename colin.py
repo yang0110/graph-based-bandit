@@ -65,7 +65,7 @@ class COLIN():
 				item_f_matrix[:, user_index]=item_f 
 				item_f_vector=item_f_matrix.flatten('F')
 				co_item_f_vector=np.dot(item_f_matrix, self.w.T).flatten('F')
-				mean=np.dot(self.user_f_vector, co_item_f_vector)
+				mean=np.dot(self.co_user_f_matrix.flatten('F'), item_f_vector)
 				var=np.sqrt(np.dot(np.dot(co_item_f_vector, self.V_inv), co_item_f_vector))
 				est_payoff=mean+self.beta*var
 				est_payoffs[j]=est_payoff
@@ -77,7 +77,7 @@ class COLIN():
 				item_f_matrix[:, user_index]=item_f 
 				item_f_vector=item_f_matrix.flatten('F')
 				co_item_f_vector=np.dot(item_f_matrix, self.w.T).flatten('F')
-				mean=np.dot(self.user_f_vector, co_item_f_vector)
+				mean=np.dot(self.co_user_f_matrix.flatten('F'), item_f_vector)
 				var=np.sqrt(np.dot(np.dot(co_item_f_vector, self.V_inv), co_item_f_vector))
 				est_payoff=mean+self.beta*var*np.sqrt(np.log(time+1))
 				est_payoffs[j]=est_payoff
@@ -117,7 +117,7 @@ class COLIN():
 		# w_row=rbf_kernel(self.user_f_matrix.T[user_index].reshape(1,-1), self.user_f_matrix.T, gamma=0.5)
 		# self.w[user_index]=w_row
 		# self.w[:,user_index]=w_row
-		self.w=rbf_kernel(self.user_ls.T, gamma=0.5)
+		self.w=rbf_kernel(self.user_f_matrix.T, gamma=0.5)
 		self.lap=csgraph.laplacian(self.w, normed=True)
 		graph_error=np.linalg.norm(self.w-self.true_adj)
 		self.graph_error.extend([graph_error])

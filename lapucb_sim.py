@@ -103,13 +103,16 @@ class LAPUCB_SIM():
 		v_inv=np.linalg.pinv(self.user_v[user_index])
 		self.user_feature_matrix[user_index]=self.user_ridge[user_index]+self.alpha*np.dot(v_inv, self.user_avg[user_index])
 
-	def update_graph(self, user_index):
-		# adj_row=rbf_kernel(self.user_feature_matrix[user_index].reshape(1,-1), self.user_feature_matrix, gamma=0.5)
-		# self.adj[user_index]=adj_row
-		# self.adj[:,user_index]=adj_row
-		self.adj=rbf_kernel(self.user_feature_matrix, gamma=0.5)
-		normed_lap=csgraph.laplacian(self.adj, normed=True)
-		self.L=normed_lap+0.01*np.identity(self.user_num)
+	def update_graph(self, user_index, time):
+		if time%20==0:
+			adj_row=rbf_kernel(self.user_feature_matrix[user_index].reshape(1,-1), self.user_feature_matrix, gamma=0.5)
+			self.adj[user_index]=adj_row
+			self.adj[:,user_index]=adj_row
+			#self.adj=rbf_kernel(self.user_feature_matrix, gamma=0.5)
+			normed_lap=csgraph.laplacian(self.adj, normed=True)
+			self.L=normed_lap+0.01*np.identity(self.user_num)
+		else: 
+			pass
 		graph_error=np.linalg.norm(self.adj-self.true_adj)
 		self.graph_error.extend([graph_error])
 
@@ -125,7 +128,7 @@ class LAPUCB_SIM():
 			true_payoff, selected_item_feature, regret=self.select_item(item_pool,user_index, time)
 			self.user_counter[user_index]+=1
 			self.update_user_feature_upon_ridge(true_payoff, selected_item_feature, user_index)
-			self.update_graph(user_index)
+			self.update_graph(user_index, time)
 			error=np.linalg.norm(self.user_feature_matrix-self.true_user_feature_matrix)
 			cumulative_regret.extend([cumulative_regret[-1]+regret])
 			learning_error_list[time]=error 

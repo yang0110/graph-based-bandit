@@ -24,7 +24,7 @@ class GOB():
 		self.I=np.identity(self.user_num*self.dimension)
 		self.adj=np.identity(self.user_num)
 		self.lap=csgraph.laplacian(self.adj, normed=True)
-		self.L=self.lap+0.01*np.identity(self.user_num)
+		self.L=self.lap+np.identity(self.user_num)
 		self.A=np.kron(self.L, np.identity(self.dimension))
 		self.A_inv=np.linalg.pinv(self.A)
 		self.A_inv_sqrt=scipy.linalg.sqrtm(self.A_inv)
@@ -103,30 +103,23 @@ class GOB():
 		self.user_feature_vector=np.dot(cov_inv, self.bias)
 		self.user_feature_matrix=self.user_feature_vector.reshape((self.user_num, self.dimension))
 		self.user_feature_matrix_converted=np.dot(np.real(self.A_inv_sqrt),self.user_feature_vector).reshape((self.user_num, self.dimension))
-		xx_inv=np.linalg.pinv(self.user_xx[user_index])
-		v_inv=np.linalg.pinv(self.user_v[user_index])
-		if (self.user_counter[user_index]<10) or (np.linalg.norm(xx_inv)>2*np.linalg.norm(v_inv)):
-			xx_inv=v_inv
-		else:
-			pass 
-		self.user_ridge[user_index]=np.dot(v_inv, self.user_bias[user_index])
-		self.user_ls[user_index]=np.dot(xx_inv, self.user_bias[user_index])
 
-	def update_graph(self, user_index):
-		# adj_row=rbf_kernel(self.user_feature_matrix_converted[user_index].reshape(1,-1), self.user_feature_matrix_converted, gamma=0.5)
-		# self.adj[user_index]=adj_row
-		# self.adj[:,user_index]=adj_row
-		self.adj=rbf_kernel(self.user_feature_matrix_converted, gamma=0.5)
-		self.adj[self.adj<0.5]=0
-		# adj_copy=self.adj.copy()
-		# np.fill_diagonal(adj_copy, 0)
-		# adj_copy[adj_copy>0]=-1
-		# binary_lap=np.diag((-1)*np.sum(adj_copy, axis=1))+adj_copy
-		lap=csgraph.laplacian(self.adj, normed=True)
-		self.L=lap+0.01*np.identity(self.user_num)
-		self.A=np.kron(self.L, np.identity(self.dimension))
-		self.A_inv=np.linalg.pinv(self.A)
-		self.A_inv_sqrt=scipy.linalg.sqrtm(self.A_inv)
+	def update_graph(self, user_index, time):
+		if time%20==0:
+			# adj_row=rbf_kernel(self.user_feature_matrix_converted[user_index].reshape(1,-1), self.user_feature_matrix_converted, gamma=0.5)
+			# self.adj[user_index]=adj_row
+			# self.adj[:,user_index]=adj_row
+			self.adj=rbf_kernel(self.user_feature_matrix_converted, gamma=0.5)
+			lap=csgraph.laplacian(self.adj, normed=True)
+			self.L=lap+0.01*np.identity(self.user_num)
+			self.A=np.kron(self.L, np.identity(self.dimension))
+			try:
+				self.A_inv=np.linalg.pinv(self.A)
+			except:
+				pass
+			self.A_inv_sqrt=scipy.linalg.sqrtm(self.A_inv)
+		else:
+			pass
 		graph_error=np.linalg.norm(self.adj-self.true_adj)
 		self.graph_error.extend([graph_error])
 
@@ -141,7 +134,7 @@ class GOB():
 			self.user_counter[user_index]+=1
 			true_payoff, selected_item_feature, regret=self.select_item(item_pool, user_index, time)
 			self.update_user_feature(true_payoff, selected_item_feature, user_index)
-			self.update_graph(user_index)
+			self.update_graph(user_index, time)
 			cumulative_regret.extend([cumulative_regret[-1]+regret])
 			error=np.linalg.norm(self.user_feature_matrix_converted.flatten()-self.true_user_feature_vector)
 			learning_error_list[time]=error

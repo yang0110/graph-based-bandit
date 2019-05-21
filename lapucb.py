@@ -114,11 +114,14 @@ class LAPUCB():
 		self.user_avg[user_index]=np.dot(self.user_ls.T, -self.L[user_index])+self.user_ls[user_index]
 		self.user_approx[user_index]=self.user_ridge[user_index]+self.alpha*np.dot(v_inv, self.user_avg[user_index])
 
-	def update_graph(self, user_index):
-		# adj_row=rbf_kernel(self.user_feature_matrix[user_index].reshape(1,-1), self.user_feature_matrix, gamma=0.5)
-		# self.adj[user_index]=adj_row
-		# self.adj[:,user_index]=adj_row
-		self.adj=rbf_kernel(self.user_feature_matrix, gamma=0.5)
+	def update_graph(self, user_index, time):
+		if time%20==0:
+			adj_row=rbf_kernel(self.user_feature_matrix[user_index].reshape(1,-1), self.user_feature_matrix, gamma=0.5)
+			self.adj[user_index]=adj_row
+			self.adj[:,user_index]=adj_row
+			#self.adj=rbf_kernel(self.user_feature_matrix, gamma=0.5)
+		else:
+			pass
 		normed_lap=csgraph.laplacian(self.adj, normed=True)
 		self.L=normed_lap+0.01*np.identity(self.user_num)
 		self.A=np.kron(self.L, np.identity(self.dimension))
@@ -137,7 +140,7 @@ class LAPUCB():
 			item_pool=item_pool_array[time]
 			true_payoff, selected_item_feature, regret=self.select_item(item_pool,user_index, time)
 			self.update_user_feature(true_payoff, selected_item_feature, user_index)
-			self.update_graph(user_index)
+			self.update_graph(user_index, time)
 			error=np.linalg.norm(self.user_feature_matrix-self.true_user_feature_matrix)
 			cumulative_regret.extend([cumulative_regret[-1]+regret])
 			learning_error_list[time]=error 
