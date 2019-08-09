@@ -93,7 +93,6 @@ def modify_normed_lap(normed_lap):
 			pass
 	return normed_lap
 
-
 def graph_error_bound(user_index, user_v_i, normed_lap, user_f_matrix_ls, user_f_matrix_graph_i, alpha, xnoise_i):
 	a=np.trace(np.linalg.pinv(user_v_i))
 	avg=np.dot(user_f_matrix_ls.T, -normed_lap[user_index])+user_f_matrix_ls[user_index]
@@ -110,28 +109,37 @@ def ridge_error_bound(user_v_i, user_f_matrix_ridge_i, alpha, xnoise_i):
 	return bound 
 
 
-def graph_UCB(user_index, user_v_i, normed_lap, user_f_matrix_ls, user_f_matrix_graph_i, alpha, xnoise_i):
+def graph_UCB(dimension,sigma, delta, user_index, user_v_i, normed_lap, user_f_matrix_ls, user_f_matrix_graph_i, alpha, xnoise_i):
 	a=alpha*np.sqrt(np.trace(np.linalg.pinv(user_v_i)))
 	avg=np.dot(user_f_matrix_ls.T, -normed_lap[user_index])+user_f_matrix_ls[user_index]
 	b=np.linalg.norm(user_f_matrix_graph_i-avg)
-	v_inv=np.linalg.pinv(user_v_i)
-	c=np.sqrt(np.dot(np.dot(xnoise_i,v_inv), xnoise_i))
+	#v_inv=np.linalg.pinv(user_v_i)
+	#c=np.sqrt(np.dot(np.dot(xnoise_i,v_inv), xnoise_i))
+	c1=np.linalg.det(user_v_i)**(1/2)
+	c2=np.linalg.det(alpha*np.identity(dimension))**(-1/2)
+	c=sigma*np.sqrt(2*np.log(c1*c2/delta))
 	ucb=a*b+c
-	return ucb 
+	return ucb,b
 
 
-def ridge_UCB(user_v_i, user_f_matrix_ridge_i, alpha, xnoise_i):
+def ridge_UCB(dimension, sigma, delta, user_v_i, user_f_matrix_ridge_i, alpha, xnoise_i):
 	a=alpha*np.sqrt(np.trace(np.linalg.pinv(user_v_i)))
 	b=np.linalg.norm(user_f_matrix_ridge_i)
-	v_inv=np.linalg.pinv(user_v_i)
-	c=np.sqrt(np.dot(np.dot(xnoise_i,v_inv), xnoise_i))
+	#v_inv=np.linalg.pinv(user_v_i)
+	#c=np.sqrt(np.dot(np.dot(xnoise_i,v_inv), xnoise_i))
+	c1=np.linalg.det(user_v_i)**(1/2)
+	c2=np.linalg.det(alpha*np.identity(dimension))**(-1/2)
+	c=sigma*np.sqrt(2*np.log(c1*c2/delta))
 	ucb=a*b+c
-	return ucb 
+	return ucb,b
 
-def ridge_UCB_old(user_v_i, user_f_matrix_ridge_i, alpha, xnoise_i):
-	a=alpha*np.linalg.norm(user_f_matrix_ridge_i)
-	v_inv=np.linalg.pinv(user_v_i)
-	c=np.sqrt(np.dot(np.dot(xnoise_i,v_inv), xnoise_i))
+def ridge_UCB_old(dimension, sigma, delta, user_v_i, user_f_matrix_ridge_i, alpha, xnoise_i):
+	a=np.sqrt(alpha)*np.linalg.norm(user_f_matrix_ridge_i)
+	#v_inv=np.linalg.pinv(user_v_i)
+	#c=np.sqrt(np.dot(np.dot(xnoise_i,v_inv), xnoise_i))
+	c1=np.linalg.det(user_v_i)**(1/2)
+	c2=np.linalg.det(alpha*np.identity(dimension))**(-1/2)
+	c=sigma*np.sqrt(2*np.log(c1*c2/delta))
 	ucb=a+c
 	return ucb 
 
