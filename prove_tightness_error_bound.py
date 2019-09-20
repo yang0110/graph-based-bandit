@@ -11,12 +11,12 @@ os.chdir('C:/Kaige_Research/Code/graph_bandit/code/')
 from utils import *
 path='../est_error_bound_ucb_results/'
 
-user_num=20
+user_num=10
 item_num=500
 dimension=10
 alpha=1
 sigma=0.1
-iteration=50*user_num
+iteration=1000
 delta=0.1
 beta=0.01
 
@@ -34,10 +34,6 @@ noise=np.random.normal(size=(user_num, item_num), scale=sigma)
 noisy_payoffs=payoffs+noise
 user_seq=np.random.choice(range(user_num), size=iteration)
 item_seq=np.random.choice(range(item_num), size=iteration)
-user_seq=np.ones((user_num, 100))
-for a in range(user_num):
-	user_seq[a]=user_seq[a]*a
-user_seq=user_seq.flatten().astype(int)
 
 user_f_matrix_ls=np.zeros((user_num, dimension))
 user_f_matrix_ridge=np.zeros((user_num, dimension))

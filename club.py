@@ -69,7 +69,7 @@ class CLUB():
 		self.CBPrime[user_index]=self.alpha_2*np.sqrt(float(1+np.log(1+self.user_counters[user_index])/float(1+self.user_counters[user_index])))
 		self.user_counters[user_index]+=1
 
-	def update_beta(self, user_index):
+	def update_beta(self, user_index, time):
 		cluster_cov=self.user_cluster_cov[user_index]
 		cluster_cov_inv=np.linalg.pinv(cluster_cov)
 		a=np.linalg.det(cluster_cov)**(1/2)
@@ -81,19 +81,13 @@ class CLUB():
 		cluster_cov=self.user_cluster_cov[user_index]
 		cluster_cov_inv=np.linalg.pinv(cluster_cov)
 		est_payoffs=[]
-		if self.state==False:
-			self.update_beta(user_index)
-			for it in item_pool:
-				x=self.item_feature_matrix[it]
-				x_norm=np.sqrt(np.dot(np.dot(x, cluster_cov_inv), x))
-				est_payoff=np.dot(self.user_cluster_feature[user_index], x)+self.beta*x_norm
-				est_payoffs.extend([est_payoff])
-		else: 
-			for it in item_pool:
-				x=self.item_feature_matrix[it]
-				x_norm=np.sqrt(np.dot(np.dot(x, cluster_cov_inv), x))
-				est_payoff=np.dot(self.user_cluster_feature[user_index], x)+self.beta*x_norm*np.sqrt(np.log(time+1))
-				est_payoffs.extend([est_payoff])
+		self.update_beta(user_index, time)
+		for it in item_pool:
+			x=self.item_feature_matrix[it]
+			x_norm=np.sqrt(np.dot(np.dot(x, cluster_cov_inv), x))
+			self.beta=0.1*np.sqrt(np.log(time+1))
+			est_payoff=np.dot(self.user_cluster_feature[user_index], x)+self.beta*x_norm
+			est_payoffs.extend([est_payoff])
 
 		itt=np.argmax(est_payoffs)
 		id_=item_pool[itt]
@@ -101,19 +95,21 @@ class CLUB():
 		true_payoff=self.true_payoffs[user_index, id_]
 		true_max_payoff=np.max(self.true_payoffs[user_index][item_pool])
 		regret=true_max_payoff-true_payoff
-		return true_payoff, regret, selected_item_feature
+		return true_payoff, regret, selected_item_feature, x_norm
 
 	def run(self, user_array, item_pool_array, iteration):
 		regret_error=[0]
 		learning_error=[]
 		cluster_num=[]
+		x_norm_list=[]
 		for time in range(iteration):
 			print('time/iteration', time, iteration, '~~~ CLUB')
 			item_pool=item_pool_array[time]
 			user_index=user_array[time]
 			self.served_user_list.extend([user_index])
 			self.served_user_list=list(np.unique(self.served_user_list))
-			true_payoff, regret, selected_item_feature=self.select_item(user_index, item_pool, time)
+			true_payoff, regret, selected_item_feature, x_norm=self.select_item(user_index, item_pool, time)
+			x_norm_list.extend([x_norm])
 			self.update_user_feature(true_payoff, selected_item_feature, user_index)
 			self.update_graph(user_index)
 			self.update_cluster_by_connected_components(user_index)
@@ -121,7 +117,7 @@ class CLUB():
 			regret_error.extend([regret_error[-1]+regret])
 			learning_error.extend([np.linalg.norm(self.true_user_feature_matrix-self.user_feature)])
 			cluster_num.extend([self.cluster_num])
-		return regret_error[1:], learning_error, cluster_num, self.beta_list
+		return regret_error[1:], learning_error, cluster_num, self.beta_list, x_norm_list
 
 
 

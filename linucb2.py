@@ -5,7 +5,7 @@ from scipy.sparse import csgraph
 import scipy
 import os 
 
-class LINUCB():
+class LINUCB2():
 	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, alpha, delta, sigma, state):
 		self.state=state
 		self.dimension=dimension
@@ -25,7 +25,6 @@ class LINUCB():
 		self.user_xx={}
 		self.user_bias={}
 		self.beta_list=[]
-		self.real_beta_list=[]
 
 	def initial_user_parameter(self):
 		for u in range(self.user_num):
@@ -38,21 +37,27 @@ class LINUCB():
 		b = np.linalg.det(self.alpha*self.I)**(-1/2)
 		self.beta=self.sigma*np.sqrt(2*np.log(a*b/self.delta))+np.sqrt(self.alpha)*np.linalg.norm(self.user_feature[user_index])
 		self.beta_list.extend([self.beta])
-		real_beta=np.sqrt(np.dot(np.dot(self.user_feature[user_index]-self.true_user_feature_matrix[user_index], self.user_cov[user_index]),self.user_feature[user_index]-self.true_user_feature_matrix[user_index]))
-		self.real_beta_list.extend([real_beta])
 
 	def select_item(self, item_pool, user_index, time):
 		item_fs=self.item_feature_matrix[item_pool]
 		estimated_payoffs=np.zeros(self.pool_size)
 		cov_inv=np.linalg.pinv(self.user_cov[user_index])
-		self.update_beta(user_index)
-		for j in range(self.pool_size):
-			x=item_fs[j]
-			x_norm=np.sqrt(np.dot(np.dot(x, cov_inv),x))
-			est_y=np.dot(x, self.user_feature[user_index])+self.beta*x_norm
-			estimated_payoffs[j]=est_y
-			ucb=self.beta*x_norm
+		h_inv=np.linalg.pinv(self.user_cov[user_index]+self.alpha*np.identity(self.dimension)+self.alpha**2*np.linalg.pinv(self.user_xx[user_index]))
+		if self.state==False: # artifical datta
+			self.update_beta(user_index)
+			for j in range(self.pool_size):
+				x=item_fs[j]
+				x_norm=np.sqrt(np.dot(np.dot(x, h_inv),x))
+				est_y=np.dot(x, self.user_feature[user_index])+self.beta*x_norm
+				estimated_payoffs[j]=est_y
+				ucb=self.beta*x_norm
 
+		else:
+			for j in range(self.pool_size):
+				x=item_fs[j]
+				x_norm=np.sqrt(np.dot(np.dot(x, cov_inv),x))
+				est_y=np.dot(x, self.user_feature[user_index])+self.beta*x_norm*np.sqrt(np.log(time+1))
+				estimated_payoffs[j]=est_y			
 
 		max_index=np.argmax(estimated_payoffs)
 		selected_item_index=item_pool[max_index]
@@ -75,9 +80,8 @@ class LINUCB():
 		x_norm_list=[]
 		ucb_list=[]
 		inst_regret=[]
-		sum_x_norm=[0]
 		for time in range(iteration):	
-			print('time/iteration', time, iteration,'~~~LinUCB')
+			print('time/iteration', time, iteration,'~~~LinUCB2')
 			user_index=user_array[time]
 			item_pool=item_pool_array[time]
 			true_payoff, selected_item_feature, regret, x_norm, ucb=self.select_item(item_pool, user_index, time)
@@ -88,6 +92,5 @@ class LINUCB():
 			learning_error_list.extend([error])
 			inst_regret.extend([regret])
 			ucb_list.extend([ucb])
-			sum_x_norm.extend([sum_x_norm[-1]+x_norm])
 
-		return cumulative_regret[1:], learning_error_list, self.beta_list, x_norm_list, inst_regret, ucb_list, sum_x_norm[1:], self.real_beta_list
+		return cumulative_regret[1:], learning_error_list, self.beta_list, x_norm_list, inst_regret, ucb_list

@@ -33,16 +33,17 @@ noise=np.random.normal(size=(user_num, item_num), scale=sigma)
 #user_f=np.random.normal(size=(user_num, dimension))
 #user_f=Normalizer().fit_transform(user_f)
 adj=rbf_kernel(np.random.normal(size=(user_num, dimension)))
-adj[adj<0]=0
-#np.fill_diagonal(adj,0)
-D=np.diag(np.sum(adj, axis=1))
-D_inv=np.sqrt(np.linalg.pinv(D))
-lap=csgraph.laplacian(adj, normed=False)
-lap=np.dot(np.linalg.inv(D), lap) 
+
 lambda_list=np.linspace(0,20,5)
-ratio_matrix=np.zeros((5, iteration-10))
-for index, smooth in enumerate(lambda_list):
-	user_f=dictionary_matrix_generator(user_num, dimension, lap, smooth)
+ratio_matrix=np.zeros((5, iteration-39))
+for index, thres in enumerate(thres_list):
+	adj[adj<thres]=0
+	#np.fill_diagonal(adj,0)
+	D=np.diag(np.sum(adj, axis=1))
+	D_inv=np.sqrt(np.linalg.pinv(D))
+	lap=csgraph.laplacian(adj, normed=False)
+	lap=np.dot(np.linalg.inv(D), lap) 
+	user_f=dictionary_matrix_generator(user_num, dimension, lap, 4)
 	L=np.kron(lap+np.identity(user_num), np.identity(dimension))
 	L_half_inv=sqrtm(np.linalg.inv(L))
 	U=user_f.ravel()
@@ -232,12 +233,12 @@ for index, smooth in enumerate(lambda_list):
 # plt.show()
 
 plt.figure(figsize=(5,5))
-for ind, smooth in enumerate(lambda_list):
-	plt.plot(ratio_matrix[ind], label='smooth= '+np.str(smooth))
-plt.legend(loc=0, fontsize=12)
-plt.xlabel('Psi', fontsize=14)
-plt.ylabel('Time', fontsize=14)
-plt.savefig(path+'Psi_smooth'+'.png', dpi=100)
+for ind, thres in enumerate(thres_list):
+	plt.plot(ratio_matrix[ind], label='Thres= '+np.str(thres))
+plt.legend(loc=0, fontsize=14)
+plt.ylabel('Psi', fontsize=14)
+plt.xlabel('Time', fontsize=14)
+plt.savefig(path+'Psi_thres'+'.png', dpi=100)
 plt.show()
 
 # plt.figure()

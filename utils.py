@@ -41,16 +41,24 @@ def ER_graph(node_num, prob):## unweighted
 	G=nx.erdos_renyi_graph(node_num, prob)
 	adj=nx.to_numpy_matrix(G)
 	adj=np.asarray(adj)
-	adj=adj+np.identity(node_num)
+	#adj=adj+np.identity(node_num)
 	return adj 
 
 def BA_graph(node_num, edge_num): #unweighted 
 	G=nx.barabasi_albert_graph(node_num, edge_num)
 	adj=nx.to_numpy_matrix(G)
 	adj=np.asarray(adj)
-	adj=adj+np.identity(node_num)
+	#adj=adj+np.identity(node_num)
 	return adj 
  
+
+def WS_graph(node_num, neighbor_num, prop):
+	G=nx.watts_strogatz_graph(node_num, neighbor_num, prop)
+	adj=nx.to_numpy_matrix(G)
+	adj=np.asarray(adj)
+	return adj
+
+
 def graph_signal_samples_from_laplacian(laplacian, node_num, dimension):
 	cov=np.linalg.pinv(laplacian)
 	samples=np.random.multivariate_normal(np.zeros(node_num),cov, size=dimension).T
