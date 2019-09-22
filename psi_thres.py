@@ -34,8 +34,8 @@ noise=np.random.normal(size=(user_num, item_num), scale=sigma)
 #user_f=Normalizer().fit_transform(user_f)
 adj=rbf_kernel(np.random.normal(size=(user_num, dimension)))
 
-lambda_list=np.linspace(0,20,5)
-ratio_matrix=np.zeros((5, iteration-39))
+thres_list=np.linspace(0,1,5)
+ratio_matrix=np.zeros((5, iteration-10))
 for index, thres in enumerate(thres_list):
 	adj[adj<thres]=0
 	#np.fill_diagonal(adj,0)
@@ -234,10 +234,11 @@ for index, thres in enumerate(thres_list):
 
 plt.figure(figsize=(5,5))
 for ind, thres in enumerate(thres_list):
-	plt.plot(ratio_matrix[ind], label='Thres= '+np.str(thres))
+	plt.plot(ratio_matrix[ind], label='Sparsity= '+np.str(thres))
 plt.legend(loc=0, fontsize=14)
-plt.ylabel('Psi', fontsize=14)
-plt.xlabel('Time', fontsize=14)
+plt.ylabel('Psi', fontsize=16)
+plt.xlabel('Time', fontsize=16)
+plt.tight_layout()
 plt.savefig(path+'Psi_thres'+'.png', dpi=100)
 plt.show()
 

@@ -22,7 +22,7 @@ def moving_average(a, n=30):
 
 iteration=500
 user_num=10
-item_num=500
+item_num=1000
 dimension=5
 item_f=np.random.normal(size=(item_num, dimension))
 item_f=Normalizer().fit_transform(item_f)
@@ -34,12 +34,12 @@ noise=np.random.normal(size=(user_num, item_num), scale=sigma)
 #user_f=Normalizer().fit_transform(user_f)
 adj=rbf_kernel(np.random.normal(size=(user_num, dimension)))
 adj[adj<0]=0
-#np.fill_diagonal(adj,0)
+np.fill_diagonal(adj,0)
 D=np.diag(np.sum(adj, axis=1))
 D_inv=np.sqrt(np.linalg.pinv(D))
 lap=csgraph.laplacian(adj, normed=False)
 lap=np.dot(np.linalg.inv(D), lap) 
-lambda_list=np.linspace(0,10,5)
+lambda_list=np.linspace(0,50,5)
 ratio_matrix=np.zeros((10, iteration-39))
 for index, smooth in enumerate(lambda_list):
 	user_f=dictionary_matrix_generator(user_num, dimension, lap, smooth)
@@ -126,7 +126,7 @@ for index, smooth in enumerate(lambda_list):
 			sum_A+=((lap[user_index,uu])**2)*np.linalg.inv(user_A[uu])
 			sum_axn+=(lap[user_index,uu])*user_axn[uu]
 		A_inv_2=np.dot(A_inv, A_inv)
-		H=user_V[user_index]+alpha**2*sum_A
+		H=user_V[user_index]+alpha*np.identity(dimension)+alpha**2*sum_A
 		H_inv=np.linalg.pinv(H)
 		xn=user_xn[user_index]
 		old_norm=alpha*np.sqrt(np.dot(np.dot(theta, V_inv),theta))
@@ -235,8 +235,9 @@ plt.figure(figsize=(5,5))
 for ind, smooth in enumerate(lambda_list):
 	plt.plot(ratio_matrix[ind], label='Smoothness= '+np.str(np.round(smooth, decimals=2)))
 plt.legend(loc=0, fontsize=14)
-plt.ylabel('Psi', fontsize=14)
-plt.xlabel('Time', fontsize=14)
+plt.ylabel('Psi', fontsize=16)
+plt.xlabel('Time', fontsize=16)
+plt.tight_layout()
 plt.savefig(path+'Psi_smooth'+'.png', dpi=100)
 plt.show()
 
