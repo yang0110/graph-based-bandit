@@ -15,7 +15,7 @@ from utils import *
 np.random.seed(2018)
 path='../bandit_results/simulated/'
 
-def moving_average(a, n=30):
+def moving_average(a, n=10):
 	ret=np.cumsum(a, dtype=float)
 	ret[n:]=ret[n:]-ret[:-n]
 	return ret[n-1:]/n
@@ -40,7 +40,7 @@ D_inv=np.sqrt(np.linalg.pinv(D))
 lap=csgraph.laplacian(adj, normed=False)
 lap=np.dot(np.linalg.inv(D), lap) 
 lambda_list=np.linspace(0,50,5)
-ratio_matrix=np.zeros((10, iteration-39))
+ratio_matrix=np.zeros((5, iteration-19))
 for index, smooth in enumerate(lambda_list):
 	user_f=dictionary_matrix_generator(user_num, dimension, lap, smooth)
 	L=np.kron(lap+np.identity(user_num), np.identity(dimension))
@@ -131,14 +131,14 @@ for index, smooth in enumerate(lambda_list):
 		xn=user_xn[user_index]
 		old_norm=alpha*np.sqrt(np.dot(np.dot(theta, V_inv),theta))
 		old_noise=np.sqrt(np.dot(np.dot(xn, V_inv), xn))
-		x_norm1=np.sqrt(np.dot(np.dot(x, V_inv), x))
+		x_norm1=np.dot(np.dot(x, V_inv), x)
 		#old_noise=np.sqrt(np.log(np.linalg.det(user_V[user_index])**(1/2)/0.1))
 		b1=old_norm+old_noise
 		theta_avg=np.dot(user_f.T, lap[user_index])
 		theta_avg_list.extend([np.linalg.norm(theta_avg)])
 		new_norm=alpha*np.sqrt(np.dot(np.dot(theta_avg, V_inv),theta_avg))
 		new_noise=np.sqrt(np.dot(np.dot(xn-alpha*sum_axn, V_inv), xn-alpha*sum_axn))
-		x_norm2=np.sqrt(np.dot(np.dot(x, H_inv),x))
+		x_norm2=np.dot(np.dot(x, H_inv),x)
 		#new_noise=np.sqrt(np.log(np.linalg.det(np.linalg.pinv(np.dot(H, A_inv_2)))**(1/2)/0.1))
 		if new_noise>0:
 			pass
