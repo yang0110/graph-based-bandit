@@ -36,28 +36,32 @@ thres=0.0
 state=False # False for artificial dataset, True for real dataset
 lambda_list=[4]
 
-thres_list=np.linspace(0,1,5)
-
-lambda_list=np.round(np.linspace(0,100,20), decimals=2)
+lambda_list=np.round(np.linspace(0,20,20), decimals=2)
+smoothness_list=np.zeros(20)
 local=np.zeros((user_num, 20))
-thres_average_local=np.zeros((5, 20))
-true_adj=rbf_kernel(np.random.normal(size=(user_num, dimension)), gamma=0.25/dimension)
-
-for thres_index, thres in enumerate(thres_list):
-	true_adj[true_adj<=thres]=0
-	lap=csgraph.laplacian(true_adj, normed=False)
-	D=np.diag(np.sum(true_adj, axis=1))
-	true_lap=np.dot(np.linalg.inv(D), lap)
-
-	for index, lambda_ in enumerate(lambda_list):
-		user_feature_matrix=dictionary_matrix_generator(user_num, dimension, true_lap, lambda_)
-		for user in range(user_num):
-			lap_row=true_lap[user]
-			average=np.dot(user_feature_matrix.T, lap_row)
-			local[user, index]=np.linalg.norm(average)
+true_adj=rbf_kernel(np.random.normal(size=(user_num, dimension)), gamma=0.5/dimension)
+np.fill_diagonal(true_adj,0)
+lap=csgraph.laplacian(true_adj, normed=False)
+D=np.diag(np.sum(true_adj, axis=1))
+true_lap=np.dot(np.linalg.inv(D), lap)
+degree=np.round(np.diag(D)-1, decimals=2)
+for index, lambda_ in enumerate(lambda_list):
+	user_feature_matrix=dictionary_matrix_generator(user_num, dimension, true_lap, lambda_)
+	smoothness_list[index]=np.trace(np.dot(np.dot(user_feature_matrix.T, true_lap), user_feature_matrix))
+	for user in range(user_num):
+		lap_row=true_lap[user]
+		average=np.dot(user_feature_matrix.T, lap_row)
+		local[user, index]=np.linalg.norm(average)
 		average_local=np.mean(local, axis=0)
-	thres_average_local[thres_index, index]=average_local
 
-plt.figure()
-plt.plot(average_local)
+smoothness_list=np.round(smoothness_list, decimals=2)
+plt.figure(figsize=(5,5))
+p=plt.plot(lambda_list, average_local)
+plt.xlabel('Smooth regularizer', fontsize=14)
+plt.ylabel('Norm of Delta', fontsize=16)
+#plt.legend(p, degree[:5])
+plt.tight_layout()
+plt.savefig(path+'delta_smoothness'+'.png', dpi=100)
 plt.show()
+
+

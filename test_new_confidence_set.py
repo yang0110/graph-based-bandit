@@ -39,8 +39,8 @@ D=np.diag(np.sum(adj, axis=1))
 D_inv=np.sqrt(np.linalg.pinv(D))
 lap=csgraph.laplacian(adj, normed=False)
 lap=np.dot(np.linalg.inv(D), lap) 
-lambda_list=np.linspace(0,20,5)
-ratio_matrix=np.zeros((5, iteration-10))
+lambda_list=np.linspace(0,10,5)
+ratio_matrix=np.zeros((10, iteration-39))
 for index, smooth in enumerate(lambda_list):
 	user_f=dictionary_matrix_generator(user_num, dimension, lap, smooth)
 	L=np.kron(lap+np.identity(user_num), np.identity(dimension))
@@ -233,10 +233,10 @@ for index, smooth in enumerate(lambda_list):
 
 plt.figure(figsize=(5,5))
 for ind, smooth in enumerate(lambda_list):
-	plt.plot(ratio_matrix[ind], label='smooth= '+np.str(smooth))
-plt.legend(loc=0, fontsize=12)
-plt.xlabel('Psi', fontsize=14)
-plt.ylabel('Time', fontsize=14)
+	plt.plot(ratio_matrix[ind], label='Smoothness= '+np.str(np.round(smooth, decimals=2)))
+plt.legend(loc=0, fontsize=14)
+plt.ylabel('Psi', fontsize=14)
+plt.xlabel('Time', fontsize=14)
 plt.savefig(path+'Psi_smooth'+'.png', dpi=100)
 plt.show()
 

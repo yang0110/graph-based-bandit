@@ -25,7 +25,7 @@ item_num=500
 dimension=10
 pool_size=20
 iteration=1000
-loop=5
+loop=1
 sigma=0.01# noise
 delta=0.1 # high probability
 alpha=1 # regularizer
@@ -45,7 +45,8 @@ random_weights=(random_weights.T+random_weights)/2
 er_adj=er_adj*random_weights
 ba_adj=ba_adj*random_weights
 
-true_adj=rbf_kernel(np.random.normal(size=(user_num, dimension)), gamma=0.5/dimension)
+true_adj=rbf_kernel(np.random.normal(size=(user_num, dimension)), gamma=0.25/dimension)
+true_adj[true_adj<0.6]=0
 #true_adj=er_adj
 #true_adj=ba_adj
 #true_adj=ws_adj
@@ -78,7 +79,22 @@ np.fill_diagonal(true_adj,0)
 
 lap=csgraph.laplacian(true_adj, normed=False)
 D=np.diag(np.sum(true_adj, axis=1))
+# true_lap=np.zeros((user_num, user_num))
+# for i in range(user_num):
+# 	for j in range(user_num):
+# 		if D[i,i]==0 and D[j,j]==0:
+# 			true_lap[i,j]=0
+# 		elif D[i,i]!=0 and D[j,j]==0:
+# 			true_lap[i,j]=0.5*(-true_adj[i,j]/D[i,i])
+# 		elif D[i,i]==0 and D[j,j]!=0:
+# 			true_lap[i,j]=0.5*(-true_adj[j,i]/D[j,j])
+# 		else:
+# 			true_lap[i,j]=0.5*(-true_adj[i,j]/D[i,i]-true_adj[j,i]/D[j,j])
+
+# np.fill_diagonal(true_lap, 1)
+
 true_lap=np.dot(np.linalg.inv(D), lap)
+true_lap=(true_lap.T+true_lap)/2
 noise_matrix=np.random.normal(scale=sigma, size=(user_num, item_num))
 
 user_seq=np.random.choice(range(user_num), size=iteration)
@@ -149,7 +165,7 @@ for lambda_ in lambda_list:
 	plt.xlabel('Time', fontsize=14)
 	plt.legend(loc=4, fontsize=14)
 	plt.tight_layout()
-	plt.savefig(path+'rbf'+'.png', dpi=100)
+	#plt.savefig(path+'rbf'+'.png', dpi=100)
 	plt.show()
 
 
@@ -163,7 +179,7 @@ for lambda_ in lambda_list:
 	plt.xlabel('Dataset Size', fontsize=16)
 	plt.legend(loc=1, fontsize=15)
 	plt.tight_layout()
-	plt.savefig(path+'error'+'.png', dpi=100)
+	#plt.savefig(path+'error'+'.png', dpi=100)
 	plt.show()
 
 

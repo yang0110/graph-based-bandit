@@ -21,7 +21,7 @@ class LAPUCB():
 		self.thres=thres
 		self.adj=true_adj
 		self.lap=true_lap
-		self.L=self.lap+0.01*np.identity(self.user_num)
+		self.L=self.lap.copy()
 		self.A=np.kron(self.L, np.identity(self.dimension))
 		self.A_inv=np.linalg.pinv(self.A)
 		self.XX=np.zeros((self.user_num*self.dimension, self.user_num*self.dimension))
@@ -43,12 +43,11 @@ class LAPUCB():
 		self.graph_error=[]
 		self.user_h={}
 		self.real_beta_list=[]
-		self.h_inv=np.zeros((self.dimension, self.dimension))
 
 
 	def initialized_parameter(self):
 		for u in range(self.user_num):
-			self.user_v[u]=self.alpha*np.identity(self.dimension)
+			self.user_v[u]=self.alpha*self.L[u,u]*np.identity(self.dimension)
 			self.user_avg[u]=np.zeros(self.dimension)
 			self.user_xx[u]=0.01*np.identity(self.dimension)
 			self.user_bias[u]=np.zeros(self.dimension)
@@ -58,8 +57,12 @@ class LAPUCB():
 	def update_beta(self, user_index):
 		sum_A=np.zeros((self.dimension, self.dimension))
 		for uu in range(self.user_num):
-			sum_A+=((self.L[user_index,uu])**2)*np.linalg.inv(self.user_xx[uu])
-		self.user_h[user_index]=self.user_v[user_index]+self.alpha*np.identity(self.dimension)+self.alpha**2*sum_A
+			if uu==user_index:
+				pass
+			else:
+				sum_A+=((self.L[user_index, uu])**2)*np.linalg.inv(self.user_xx[uu])
+		self.user_h[user_index]=self.user_v[user_index]+self.alpha**2*sum_A
+		#+self.alpha*self.L[user_index, user_index]*np.identity(self.dimension)
 		a=np.linalg.det(self.user_v[user_index])**(1/2)
 		b=np.linalg.det(self.alpha*np.identity(self.dimension))**(-1/2)
 		d=self.sigma*np.sqrt(2*np.log(a*b/self.delta))
@@ -77,11 +80,11 @@ class LAPUCB():
 	def select_item(self, item_pool, user_index, time):
 		item_fs=self.item_feature_matrix[item_pool]
 		estimated_payoffs=np.zeros(self.pool_size)
-		self.h_inv=np.linalg.pinv(self.user_h[user_index])
 		self.update_beta(user_index)
+		h_inv=np.linalg.pinv(self.user_h[user_index])
 		for j in range(self.pool_size):
 			x=item_fs[j]
-			x_norm=np.sqrt(np.dot(np.dot(x, self.h_inv),x))
+			x_norm=np.sqrt(np.dot(np.dot(x, h_inv),x))
 			mean=np.dot(x, self.user_feature_matrix[user_index])
 			est_y=mean+self.beta*x_norm
 			estimated_payoffs[j]=est_y

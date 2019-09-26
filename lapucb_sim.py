@@ -21,7 +21,7 @@ class LAPUCB_SIM():
 		self.thres=thres
 		self.adj=true_adj
 		self.lap=true_lap
-		self.L=self.lap+0.01*np.identity(self.user_num)
+		self.L=self.lap.copy()
 		self.alpha=alpha
 		self.delta=delta
 		self.sigma=sigma
@@ -39,7 +39,7 @@ class LAPUCB_SIM():
 
 	def initialized_parameter(self):
 		for u in range(self.user_num):
-			self.user_v[u]=self.alpha*np.identity(self.dimension)
+			self.user_v[u]=self.alpha*self.L[u,u]*np.identity(self.dimension)
 			self.user_avg[u]=np.zeros(self.dimension)
 			self.user_xx[u]=0.01*np.identity(self.dimension)
 			self.user_bias[u]=np.zeros(self.dimension)
@@ -49,8 +49,12 @@ class LAPUCB_SIM():
 	def update_beta(self, user_index):
 		sum_A=np.zeros((self.dimension, self.dimension))
 		for uu in range(self.user_num):
-			sum_A+=((self.L[user_index,uu])**2)*np.linalg.inv(self.user_xx[uu])
-		self.user_h[user_index]=self.user_v[user_index]+self.alpha*np.identity(self.dimension)+self.alpha**2*sum_A
+			if uu==user_index:
+				pass
+			else:
+				sum_A+=((self.L[user_index, uu])**2)*np.linalg.inv(self.user_xx[uu])
+		self.user_h[user_index]=self.user_v[user_index]+self.alpha**2*sum_A
+		#+self.alpha*self.L[user_index, user_index]*np.identity(self.dimension)
 		a=np.linalg.det(self.user_v[user_index])**(1/2)
 		b=np.linalg.det(self.alpha*np.identity(self.dimension))**(-1/2)
 		d=self.sigma*np.sqrt(2*np.log(a*b/self.delta))
@@ -65,8 +69,8 @@ class LAPUCB_SIM():
 	def select_item(self, item_pool, user_index, time):
 		item_fs=self.item_feature_matrix[item_pool]
 		estimated_payoffs=np.zeros(self.pool_size)
-		h_inv=np.linalg.pinv(self.user_h[user_index])
 		self.update_beta(user_index)
+		h_inv=np.linalg.pinv(self.user_h[user_index])
 		for j in range(self.pool_size):
 			x=item_fs[j]
 			x_norm=np.sqrt(np.dot(np.dot(x, h_inv),x))
@@ -94,9 +98,10 @@ class LAPUCB_SIM():
 		self.user_ridge[user_index]=np.dot(v_inv, self.user_bias[user_index])
 		for u in range(self.user_num):
 			v_inv=np.linalg.pinv(self.user_v[u])
+			xx_inv=np.linalg.pinv(self.user_xx[u])
 			self.user_avg[u]=np.dot(self.user_ls.T, self.L[u])
-			self.user_feature_matrix[u]=self.user_ridge[u]-self.alpha*np.dot(v_inv, self.user_avg[u]-self.user_ls[u])
-
+			#self.user_feature_matrix[u]=self.user_ridge[u]-self.alpha*np.dot(v_inv, self.user_avg[u]-self.user_ls[u])
+			self.user_feature_matrix[u]=self.user_ls[u]-self.alpha*np.dot(v_inv, self.user_avg[u])
 
 	def run(self, user_array, item_pool_array, iteration):
 		self.initialized_parameter()

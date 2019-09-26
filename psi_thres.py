@@ -15,7 +15,7 @@ from utils import *
 np.random.seed(2018)
 path='../bandit_results/simulated/'
 
-def moving_average(a, n=30):
+def moving_average(a, n=10):
 	ret=np.cumsum(a, dtype=float)
 	ret[n:]=ret[n:]-ret[:-n]
 	return ret[n-1:]/n
@@ -35,7 +35,7 @@ noise=np.random.normal(size=(user_num, item_num), scale=sigma)
 adj=rbf_kernel(np.random.normal(size=(user_num, dimension)))
 
 thres_list=np.linspace(0,1,5)
-ratio_matrix=np.zeros((5, iteration-10))
+ratio_matrix=np.zeros((5, iteration-19))
 for index, thres in enumerate(thres_list):
 	adj[adj<thres]=0
 	#np.fill_diagonal(adj,0)

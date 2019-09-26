@@ -18,46 +18,54 @@ from lapucb_sim import LAPUCB_SIM
 from club import CLUB
 from utils import *
 path='../bandit_results/simulated/'
-#np.random.seed(2018)
+np.random.seed(2018)
 
-user_num=20
+user_num=10
 item_num=500
 dimension=5
 pool_size=20
 iteration=500
-loop=1
+loop=5
 sigma=0.01# noise
-delta=0.01# high probability
+delta=0.1# high probability
 alpha=1# regularizer
 alpha_2=0.1# edge delete CLUB
 beta=0.1# exploration for CLUB, SCLUB and GOB
 thres=0.0
 state=False # False for artificial dataset, True for real dataset
-lambda_list=[4]
+#lambda_list=[10]
 
 item_feature_matrix=Normalizer().fit_transform(np.random.normal(size=(item_num, dimension)))
 user_seq=np.random.choice(range(user_num), size=iteration)
 item_pool_seq=np.random.choice(range(item_num), size=(iteration, pool_size))
 noise_matrix=np.random.normal(scale=sigma, size=(user_num, item_num))
 
-true_adj=np.random.uniform(size=(user_num, user_num))
-true_adj=(true_adj.T+true_adj)/2.0
-edge_weights=true_adj.copy()
+true_adj=rbf_kernel(np.random.normal(size=(user_num, dimension)), gamma=0.5/dimension)
 np.fill_diagonal(true_adj, 0)
-lap=csgraph.laplacian(true_adj, normed=False)
+edge_weights=true_adj.copy()
 D=np.diag(np.sum(true_adj, axis=1))
+lap=D-true_adj
 true_lap=np.dot(np.linalg.inv(D), lap)
 user_feature_matrix=dictionary_matrix_generator(user_num, dimension, true_lap, 4)
+smoothness=np.trace(np.dot(np.dot(user_feature_matrix.T, true_lap), user_feature_matrix))
+print('smoothness', smoothness)
 
-cum_matrix=np.zeros((5, 10))
-m_list=np.linspace(1, user_num-1, 10).astype(int)
+
+cum_matrix=np.zeros((5, user_num-1))
+m_list=np.arange(1, user_num).astype(int)
 for index, m in enumerate(m_list):
 	true_adj=BA_graph(user_num, m)
 	true_adj=true_adj*edge_weights
-	np.fill_diagonal(true_adj,1)
-	lap=csgraph.laplacian(true_adj, normed=False)
 	D=np.diag(np.sum(true_adj, axis=1))
-	true_lap=np.dot(np.linalg.inv(D), lap)
+	true_lap=np.zeros((user_num, user_num))
+	for i in range(user_num):
+		for j in range(user_num):
+			if D[i,i]==0:
+				true_lap[i,j]=0
+			else:
+				true_lap[i,j]=-true_adj[i,j]/D[i,i]
+
+	np.fill_diagonal(true_lap, 1)
 
 	true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)+noise_matrix
 	linucb_regret_matrix=np.zeros((loop, iteration))
@@ -131,13 +139,14 @@ for index, m in enumerate(m_list):
 
 plt.figure(figsize=(5,5))
 plt.plot(m_list, cum_matrix[0], '-', label='LinUCB')
-plt.plot(m_list, cum_matrix[1], '-p', label='Gob.Lin')
-plt.plot(m_list, cum_matrix[4], '-s', label='GraphUCB-Local')
-plt.plot(m_list, cum_matrix[3], '-o', label='GraphUCB')
-plt.plot(m_list, cum_matrix[2], '-*', label='CLUB')
+plt.plot(m_list, cum_matrix[1], '-p',color='orange', markevery=0.1, label='Gob.Lin')
+plt.plot(m_list, cum_matrix[4], '-s',markevery=0.1, label='GraphUCB-Local')
+plt.plot(m_list, cum_matrix[3], '-o',markevery=0.1, label='GraphUCB')
+plt.plot(m_list, cum_matrix[2], '-*',markevery=0.1, label='CLUB')
 plt.legend(loc=1, fontsize=12)
-plt.xlabel('Neighbor Num', fontsize=16)
+plt.xlabel('m', fontsize=16)
 plt.ylabel('Cumulative Regret', fontsize=16)
+#plt.title('Smoothness=%s'%(np.int(smoothness)), fontsize=16)
 plt.tight_layout()
 plt.savefig(path+'m_ba'+'.png', dpi=100)
 plt.show()
