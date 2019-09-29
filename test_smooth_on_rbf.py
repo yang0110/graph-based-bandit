@@ -9,7 +9,7 @@ from scipy.sparse import csgraph
 import scipy
 import os 
 from sklearn import datasets
-os.chdir('/Kaige_Research/Code/graph_bandit/code/')
+# os.chdir('/Kaige_Research/Code/graph_bandit/code/')
 from linucb import LINUCB
 from t_sampling import TS
 from gob import GOB 
@@ -24,8 +24,8 @@ user_num=20
 item_num=500
 dimension=5
 pool_size=20
-iteration=500
-loop=1
+iteration=1000
+loop=5
 sigma=0.01# noise
 delta=0.1# high probability
 alpha=1# regularizer
@@ -45,7 +45,7 @@ np.fill_diagonal(true_adj, 0)
 D=np.diag(np.sum(true_adj, axis=1))
 lap=D-true_adj
 true_lap=np.dot(np.linalg.inv(D), lap)
-user_feature_matrix=dictionary_matrix_generator(user_num, dimension, true_lap, 5)
+user_feature_matrix=dictionary_matrix_generator(user_num, dimension, true_lap, 10)
 smoothness=np.trace(np.dot(np.dot(user_feature_matrix.T, true_lap), user_feature_matrix))
 print('smoothness', smoothness)
 
@@ -53,11 +53,6 @@ cum_matrix=np.zeros((5, 10))
 smooth_list=np.round(np.linspace(0,50,10), decimals=2)
 smoothness_list=np.zeros(10)
 for index, smooth in enumerate(smooth_list):
-	user_feature_matrix=dictionary_matrix_generator(user_num, dimension, true_lap, smooth)
-	smoothness_list[index]=np.trace(np.dot(np.dot(user_feature_matrix.T, true_lap), user_feature_matrix))
-
-	true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)+noise_matrix
-
 	linucb_regret_matrix=np.zeros((loop, iteration))
 	linucb_error_matrix=np.zeros((loop, iteration))
 	gob_regret_matrix=np.zeros((loop, iteration))
@@ -71,6 +66,10 @@ for index, smooth in enumerate(smooth_list):
 
 	for l in range(loop):
 		print('loop/total_loop', l, loop)
+		user_feature_matrix=dictionary_matrix_generator(user_num, dimension, true_lap, smooth)
+		smoothness_list[index]=np.trace(np.dot(np.dot(user_feature_matrix.T, true_lap), user_feature_matrix))
+		true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)+noise_matrix
+
 		linucb_model=LINUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha, delta, sigma, state)
 		gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj,true_lap, alpha, delta, sigma, beta, state)
 		lapucb_model=LAPUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj,true_lap, noise_matrix, alpha, delta, sigma, beta, thres, state)
@@ -130,12 +129,14 @@ smoothness_list=np.round(smoothness_list, decimals=2)
 plt.figure(figsize=(5,5))
 plt.plot(smooth_list, cum_matrix[0], '-', label='LinUCB')
 plt.plot(smooth_list, cum_matrix[1], '-p',color='orange', markevery=0.1, label='Gob.Lin')
-plt.plot(smooth_list, cum_matrix[4], '-s',markevery=0.1, label='GraphUCB-Local')
-plt.plot(smooth_list, cum_matrix[3], '-o',markevery=0.1, label='GraphUCB')
-plt.plot(smooth_list, cum_matrix[2], '-*',markevery=0.1, label='CLUB')
+plt.plot(smooth_list, cum_matrix[4], '-s', color='g', markevery=0.1, label='GraphUCB-Local')
+plt.plot(smooth_list, cum_matrix[3], '-o', color='r', markevery=0.1, label='GraphUCB')
+plt.plot(smooth_list, cum_matrix[2], '-*', color='k', markevery=0.1, label='CLUB')
 plt.legend(loc=1, fontsize=12)
 plt.xlabel('Smooth', fontsize=16)
 plt.ylabel('Cumulative Regret', fontsize=16)
 plt.tight_layout()
 plt.savefig(path+'smooth_rbf'+'.png', dpi=100)
 plt.show()
+
+

@@ -9,7 +9,7 @@ from scipy.sparse import csgraph
 import scipy
 import os 
 from sklearn import datasets
-os.chdir('/Kaige_Research/Code/graph_bandit/code/')
+# os.chdir('/Kaige_Research/Code/graph_bandit/code/')
 from linucb import LINUCB
 from t_sampling import TS
 from gob import GOB 
@@ -18,14 +18,14 @@ from lapucb_sim import LAPUCB_SIM
 from club import CLUB
 from utils import *
 path='../bandit_results/simulated/'
-np.random.seed(2018)
+# np.random.seed(2018)
 
-user_num=10
+user_num=20
 item_num=500
 dimension=5
 pool_size=20
-iteration=500
-loop=5
+iteration=1000
+loop=1
 sigma=0.01# noise
 delta=0.1# high probability
 alpha=1# regularizer
@@ -46,28 +46,16 @@ edge_weights=true_adj.copy()
 D=np.diag(np.sum(true_adj, axis=1))
 lap=D-true_adj
 true_lap=np.dot(np.linalg.inv(D), lap)
-user_feature_matrix=dictionary_matrix_generator(user_num, dimension, true_lap, 4)
+user_feature_matrix=dictionary_matrix_generator(user_num, dimension, true_lap, 10)
 smoothness=np.trace(np.dot(np.dot(user_feature_matrix.T, true_lap), user_feature_matrix))
 print('smoothness', smoothness)
+true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)+noise_matrix
 
 
-cum_matrix=np.zeros((5, user_num-1))
-m_list=np.arange(1, user_num).astype(int)
+
+cum_matrix=np.zeros((5, user_num-2))
+m_list=np.arange(1, user_num-1).astype(int)
 for index, m in enumerate(m_list):
-	true_adj=BA_graph(user_num, m)
-	true_adj=true_adj*edge_weights
-	D=np.diag(np.sum(true_adj, axis=1))
-	true_lap=np.zeros((user_num, user_num))
-	for i in range(user_num):
-		for j in range(user_num):
-			if D[i,i]==0:
-				true_lap[i,j]=0
-			else:
-				true_lap[i,j]=-true_adj[i,j]/D[i,i]
-
-	np.fill_diagonal(true_lap, 1)
-
-	true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)+noise_matrix
 	linucb_regret_matrix=np.zeros((loop, iteration))
 	linucb_error_matrix=np.zeros((loop, iteration))
 	gob_regret_matrix=np.zeros((loop, iteration))
@@ -81,6 +69,18 @@ for index, m in enumerate(m_list):
 
 	for l in range(loop):
 		print('loop/total_loop', l, loop)
+		true_adj=BA_graph(user_num, m)
+		true_adj=true_adj*edge_weights
+		D=np.diag(np.sum(true_adj, axis=1))
+		true_lap=np.zeros((user_num, user_num))
+		for i in range(user_num):
+			for j in range(user_num):
+				if D[i,i]==0:
+					true_lap[i,j]=0
+				else:
+					true_lap[i,j]=-true_adj[i,j]/D[i,i]
+
+		np.fill_diagonal(true_lap, 1)
 		linucb_model=LINUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha, delta, sigma, state)
 		gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj,true_lap, alpha, delta, sigma, beta, state)
 		lapucb_model=LAPUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj,true_lap, noise_matrix, alpha, delta, sigma, beta, thres, state)
@@ -140,13 +140,16 @@ for index, m in enumerate(m_list):
 plt.figure(figsize=(5,5))
 plt.plot(m_list, cum_matrix[0], '-', label='LinUCB')
 plt.plot(m_list, cum_matrix[1], '-p',color='orange', markevery=0.1, label='Gob.Lin')
-plt.plot(m_list, cum_matrix[4], '-s',markevery=0.1, label='GraphUCB-Local')
-plt.plot(m_list, cum_matrix[3], '-o',markevery=0.1, label='GraphUCB')
-plt.plot(m_list, cum_matrix[2], '-*',markevery=0.1, label='CLUB')
+plt.plot(m_list, cum_matrix[4], '-s',color='g', markevery=0.1, label='GraphUCB-Local')
+plt.plot(m_list, cum_matrix[3], '-o',color='r', markevery=0.1, label='GraphUCB')
+plt.plot(m_list, cum_matrix[2], '-*',color='k', markevery=0.1, label='CLUB')
 plt.legend(loc=1, fontsize=12)
+plt.ylim([0,80])
 plt.xlabel('m', fontsize=16)
 plt.ylabel('Cumulative Regret', fontsize=16)
 #plt.title('Smoothness=%s'%(np.int(smoothness)), fontsize=16)
 plt.tight_layout()
 plt.savefig(path+'m_ba'+'.png', dpi=100)
 plt.show()
+
+

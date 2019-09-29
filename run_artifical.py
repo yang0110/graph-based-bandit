@@ -9,7 +9,7 @@ from scipy.sparse import csgraph
 import scipy
 import os 
 from sklearn import datasets
-os.chdir('/Kaige_Research/Code/graph_bandit/code/')
+# os.chdir('Users/kaigeyang/Documents/research/bandit/code/graph_based_bandit/')
 from linucb import LINUCB
 from t_sampling import TS
 from gob import GOB 
@@ -18,15 +18,15 @@ from lapucb_sim import LAPUCB_SIM
 from club import CLUB
 from utils import *
 path='../bandit_results/simulated/'
-np.random.seed(2018)
+# np.random.seed(2018)
 
 
 user_num=20
 item_num=500
 dimension=5
 pool_size=20
-iteration=500
-loop=1
+iteration=1000
+loop=5
 sigma=0.01# noise
 delta=0.1# high probability
 alpha=1 # regularizer
@@ -42,7 +42,7 @@ item_pool_seq=np.random.choice(range(item_num), size=(iteration, pool_size))
 item_feature_matrix=Normalizer().fit_transform(np.random.normal(size=(item_num, dimension)))
 noise_matrix=np.random.normal(scale=sigma, size=(user_num, item_num))
 
-old_adj=rbf_kernel(np.random.normal(size=(user_num, dimension)), gamma=0.25/dimension)
+old_adj=rbf_kernel(np.random.normal(size=(user_num, dimension)), gamma=0.5/dimension)
 np.fill_diagonal(old_adj, 0)
 D=np.diag(np.sum(old_adj, axis=1))
 true_lap=np.zeros((user_num, user_num))
@@ -64,13 +64,17 @@ true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)+noise_matrix
 er_adj=ER_graph(user_num, 0.2)
 er_adj=er_adj*old_adj
 
-ba_adj=BA_graph(user_num, 1)
+ba_adj=BA_graph(user_num, 4)
 ba_adj=ba_adj*old_adj
 
+ws_adj=WS_graph(user_num, 4, 0.2)
+ws_adj=ws_adj*old_adj
+
 true_adj=old_adj.copy()
-#true_adj[true_adj<0.8]=0
-#true_adj=er_adj.copy()
-#true_adj=ba_adj.copy()
+# true_adj[true_adj<0.8]=0
+true_adj=er_adj.copy()
+true_adj=ba_adj.copy()
+true_adj=ws_adj.copy()
 sparsity=np.sum(true_adj>0)/(user_num*(user_num-1))
 print('sparsity', sparsity)
 
@@ -105,9 +109,9 @@ pos = nx.spring_layout(graph)
 plt.figure(figsize=(5,5))
 nodes=nx.draw_networkx_nodes(graph, pos, node_size=10, node_color='y')
 edges=nx.draw_networkx_edges(graph, pos, width=0.1, alpha=1, edge_color='k')
-edge_labels=nx.draw_networkx_edge_labels(graph, pos, edge_labels=labels, font_size=5)
+edge_labels=nx.draw_networkx_edge_labels(graph, pos, edge_labels=labels, font_size=8)
 plt.axis('off')
-plt.savefig(path+'network_ba'+'.png', dpi=100)
+plt.savefig(path+'network_ws'+'.png', dpi=100)
 plt.show()
 
 
@@ -160,15 +164,15 @@ club_error=np.mean(club_error_matrix, axis=0)
 plt.figure(figsize=(5,5))
 plt.plot(linucb_regret,'-.', markevery=0.1, label='LinUCB')
 plt.plot(gob_regret, '-p', color='orange', markevery=0.1, label='GOB.Lin')
-plt.plot(lapucb_sim_regret, '-s', markevery=0.1, label='GraphUCB-Local')
-plt.plot(lapucb_regret, '-o', markevery=0.1, label='GraphUCB')
-plt.plot(club_regret,'-*', markevery=0.1, label='CLUB')
+plt.plot(lapucb_sim_regret, '-s', color='g', markevery=0.1, label='GraphUCB-Local')
+plt.plot(lapucb_regret, '-o', color='r', markevery=0.1, label='GraphUCB')
+plt.plot(club_regret,'-*', color='k', markevery=0.1, label='CLUB')
 plt.ylabel('Cumulative Regret', fontsize=16)
 plt.xlabel('Time', fontsize=16)
-plt.title('Smoothness=%s'%(np.round(smoothness, decimals=0)), fontsize=16)
-plt.legend(loc=4, fontsize=14)
+plt.title('sp=%s, sm=%s'%(np.round(sparsity, decimals=2), np.round(smoothness, decimals=2)), fontsize=16)
+plt.legend(loc=1, fontsize=14)
 plt.tight_layout()
-plt.savefig(path+'ba'+'.png', dpi=100)
+plt.savefig(path+'ws'+'.png', dpi=100)
 plt.show()
 
 
@@ -176,9 +180,9 @@ plt.show()
 plt.figure(figsize=(5,5))
 plt.plot(linucb_error,'-.', markevery=0.1, label='LinUCB')
 plt.plot(gob_error, '-p', color='orange', markevery=0.1, label='GOB.Lin')
-plt.plot(lapucb_sim_error, '-s', markevery=0.1, label='GraphUCB-Local')
-plt.plot(lapucb_error, '-o', markevery=0.1, label='GraphUCB')
-plt.plot(club_error, '-*', markevery=0.1, label='CLUB')
+plt.plot(lapucb_sim_error, '-s',color='g', markevery=0.1, label='GraphUCB-Local')
+plt.plot(lapucb_error, '-o', color='r', markevery=0.1, label='GraphUCB')
+plt.plot(club_error, '-*', color='k', markevery=0.1, label='CLUB')
 plt.ylabel('Error', fontsize=14)
 plt.xlabel('Time', fontsize=14)
 plt.legend(loc=1, fontsize=14)

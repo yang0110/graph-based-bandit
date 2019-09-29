@@ -42,19 +42,17 @@ noise_matrix=np.random.normal(scale=sigma, size=(user_num, item_num))
 
 true_adj=rbf_kernel(np.random.normal(size=(user_num, dimension)), gamma=0.5/dimension)
 np.fill_diagonal(true_adj, 0)
-edge_weights=true_adj.copy()
 D=np.diag(np.sum(true_adj, axis=1))
 lap=D-true_adj
 true_lap=np.dot(np.linalg.inv(D), lap)
 user_feature_matrix=dictionary_matrix_generator(user_num, dimension, true_lap, 10)
 smoothness=np.trace(np.dot(np.dot(user_feature_matrix.T, true_lap), user_feature_matrix))
 print('smoothness', smoothness)
+true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)+noise_matrix
 
-
-cum_matrix=np.zeros((5,10))
-p_list=np.round(np.linspace(0,1,10), decimals=2)
-for index, p in enumerate(p_list):
-	true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)+noise_matrix
+cum_matrix=np.zeros((5, 10))
+thres_list=np.round(np.linspace(0,1,10), decimals=2)
+for index, thres in enumerate(thres_list):
 	linucb_regret_matrix=np.zeros((loop, iteration))
 	linucb_error_matrix=np.zeros((loop, iteration))
 	gob_regret_matrix=np.zeros((loop, iteration))
@@ -68,8 +66,7 @@ for index, p in enumerate(p_list):
 
 	for l in range(loop):
 		print('loop/total_loop', l, loop)
-		true_adj=ER_graph(user_num, p)
-		true_adj=true_adj*edge_weights
+		true_adj[true_adj<thres]=0
 		D=np.diag(np.sum(true_adj, axis=1))
 		true_lap=np.zeros((user_num, user_num))
 		for i in range(user_num):
@@ -138,17 +135,14 @@ for index, p in enumerate(p_list):
 
 
 plt.figure(figsize=(5,5))
-plt.plot(p_list, cum_matrix[0], '-', label='LinUCB')
-plt.plot(p_list, cum_matrix[1], '-p',color='orange', markevery=0.1, label='Gob.Lin')
-plt.plot(p_list, cum_matrix[4], '-s',color='g', markevery=0.1, label='GraphUCB-Local')
-plt.plot(p_list, cum_matrix[3], '-o',color='r', markevery=0.1, label='GraphUCB')
-plt.plot(p_list, cum_matrix[2], '-*',color='k', markevery=0.1, label='CLUB')
+plt.plot(thres_list, cum_matrix[0], '-', label='LinUCB')
+plt.plot(thres_list, cum_matrix[1], '-p',color='orange', markevery=0.1, label='Gob.Lin')
+plt.plot(thres_list, cum_matrix[4], '-s',color='g', markevery=0.1, label='GraphUCB-Local')
+plt.plot(thres_list, cum_matrix[3], '-o',color='r', markevery=0.1, label='GraphUCB')
+plt.plot(thres_list, cum_matrix[2], '-*',color='k', markevery=0.1, label='CLUB')
 plt.legend(loc=1, fontsize=12)
-plt.xlabel('p', fontsize=16)
+plt.xlabel('Sparsity', fontsize=16)
 plt.ylabel('Cumulative Regret', fontsize=16)
-#plt.title('Smoothness=%s'%(np.int(smoothness)), fontsize=16)
 plt.tight_layout()
-plt.savefig(path+'p_er'+'.png', dpi=100)
+plt.savefig(path+'threshold_rbf'+'.png', dpi=100)
 plt.show()
-
-
