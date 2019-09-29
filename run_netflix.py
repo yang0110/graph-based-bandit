@@ -17,61 +17,39 @@ from lapucb import LAPUCB
 from lapucb_sim import LAPUCB_SIM
 from club import CLUB
 from utils import *
-path='../bandit_results/simulated/'
-np.random.seed(2018)
+path='../bandit_results/netflix/'
+#np.random.seed(2018)
 
-user_num=20
+user_num=30
 item_num=300
-
 dimension=10
 pool_size=20
 iteration=1000
-loop=1
+loop=5
 sigma=0.01# noise
 delta=0.1# high probability
-alpha=1# regularizer
-alpha_2=0.1 # edge delete CLUB
-beta=0.05# exploration for CLUB, SCLUB and GOB
+alpha=0.25# regularizer
+alpha_2=0.125# edge delete CLUB
+beta=0.125 # exploration for CLUB, SCLUB and GOB
 state=False # False for artificial dataset, True for real dataset
 thres=0
+
 input_path='../processed_data/netflix/'
-user_feature_matrix=np.load(input_path+'user_feature_matrix_100.npy')
-item_feature_matrix=np.load(input_path+'item_feature_matrix_500.npy')
+user_feature_matrix_ori=np.load(input_path+'user_feature_matrix_100.npy')
+item_feature_matrix_ori=np.load(input_path+'item_feature_matrix_500.npy')
 
-user_feature_matrix=user_feature_matrix[:user_num]
-item_feature_matrix=item_feature_matrix[:item_num]
-true_adj=rbf_kernel(user_feature_matrix, gamma=1)
-np.fill_diagonal(true_adj,0)
-
-edges=true_adj.ravel()
-plt.figure(figsize=(5,5))
-plt.hist(edges)
-plt.ylabel('Counts', fontsize=12)
-plt.xlabel('Edge weights', fontsize=12)
-plt.tight_layout()
-plt.savefig(path+'hist_edge_weights_netflix'+'.png', dpi=100)
-plt.show()
-
-D=np.diag(np.sum(true_adj, axis=1))
-lap=D-true_adj
-true_lap=np.dot(np.linalg.inv(D), lap)
-
-noise_matrix=np.random.normal(scale=sigma, size=(user_num, item_num))
-true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)+noise_matrix
-
-payoffs=true_payoffs.ravel()
-plt.figure(figsize=(5,5))
-plt.hist(payoffs)
-plt.ylabel('Counts', fontsize=12)
-plt.xlabel('Payoffs', fontsize=12)
-plt.tight_layout()
-plt.savefig(path+'hist_payoffs_netflix'+'.png', dpi=100)
-plt.show()
+user_length=user_feature_matrix_ori.shape[0]
+item_length=item_feature_matrix_ori.shape[0]
 
 
-
-user_seq=np.random.choice(range(user_num), size=iteration)
-item_pool_seq=np.random.choice(range(item_num), size=(iteration, pool_size))
+# payoffs=true_payoffs.ravel()
+# plt.figure(figsize=(5,5))
+# plt.hist(payoffs)
+# plt.ylabel('Counts', fontsize=12)
+# plt.xlabel('Payoffs', fontsize=12)
+# plt.tight_layout()
+# plt.savefig(path+'hist_payoffs_movielens'+'.png', dpi=100)
+# plt.show()
 
 
 linucb_regret_matrix=np.zeros((loop, iteration))
@@ -90,11 +68,44 @@ lapucb_sim_graph_matrix=np.zeros((loop, iteration))
 
 for l in range(loop):
 	print('loop/total_loop', l, loop)
-	linucb_model=LINUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha, delta, sigma, state)
-	gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, true_lap, alpha, delta, sigma, beta, state)
-	lapucb_model=LAPUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj,true_lap, noise_matrix, alpha, delta, sigma, beta, thres, state)
-	lapucb_sim_model=LAPUCB_SIM(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj,true_lap, noise_matrix, alpha, delta, sigma, beta, thres, state)
-	club_model = CLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha, alpha_2, delta, sigma, beta, state)
+	user_list=np.random.choice(range(user_length), size=user_num)
+	item_list=np.random.choice(range(item_length), size=300)
+	user_feature_matrix=user_feature_matrix_ori[user_list]
+	item_feature_matrix=item_feature_matrix_ori[item_list]
+	noise_matrix=np.random.normal(scale=sigma, size=(user_num, item_num))
+	true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)+noise_matrix
+	user_seq=np.random.choice(range(user_num), size=iteration)
+	item_pool_seq=np.random.choice(range(item_num), size=(iteration, pool_size))
+
+	true_adj=rbf_kernel(user_feature_matrix, gamma=0.5)
+	np.fill_diagonal(true_adj,0)
+
+	# edges=true_adj.ravel()
+	# plt.figure(figsize=(5,5))
+	# plt.hist(edges)
+	# plt.ylabel('Counts', fontsize=12)
+	# plt.xlabel('Edge weights', fontsize=12)
+	# plt.tight_layout()
+	# plt.savefig(path+'hist_edge_weights_movielens'+'.png', dpi=100)
+	# plt.show()
+
+	D=np.diag(np.sum(true_adj, axis=1))
+	lap=D-true_adj
+	true_lap=np.zeros((user_num, user_num))
+	for i in range(user_num):
+		for j in range(user_num):
+			if D[i,i]==0:
+				true_lap[i,j]=0
+			else:
+				true_lap[i,j]=-true_adj[i,j]/D[i,i]
+	np.fill_diagonal(true_lap, 1)
+
+
+	linucb_model=LINUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, 0.25, delta, sigma, state)
+	gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, true_lap, 0.25, delta, sigma, 0.125, state)
+	lapucb_model=LAPUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, true_lap, noise_matrix, 0.25, delta, sigma, beta, thres, state)
+	lapucb_sim_model=LAPUCB_SIM(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, true_lap, noise_matrix, 0.25, delta, sigma, beta, thres, state)
+	club_model = CLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, 0.25, 0.125, delta, sigma, beta, state)
 
 	linucb_regret, linucb_error, linucb_beta, linucb_x_norm, linucb_inst_regret, linucb_ucb, linucb_sum_x_norm, linucb_real_beta=linucb_model.run(user_seq, item_pool_seq, iteration)
 	gob_regret, gob_error, gob_beta,  gob_x_norm, gob_ucb, gob_sum_x_norm, gob_real_beta=gob_model.run(user_seq, item_pool_seq, iteration)
@@ -123,76 +134,35 @@ lapucb_sim_error=np.mean(lapucb_sim_error_matrix, axis=0)
 club_regret=np.mean(club_regret_matrix, axis=0)
 club_error=np.mean(club_error_matrix, axis=0)
 
+
+
 plt.figure(figsize=(5,5))
 plt.plot(linucb_regret,'-.', markevery=0.1, label='LinUCB')
 plt.plot(gob_regret, '-p', color='orange', markevery=0.1, label='GOB.Lin')
-plt.plot(lapucb_sim_regret, '-s', markevery=0.1, label='GraphUCB-Local')
-plt.plot(lapucb_regret, '-o', markevery=0.1, label='GraphUCB')
-plt.plot(club_regret,'-*', markevery=0.1, label='CLUB')
+plt.plot(lapucb_sim_regret, '-s', color='g', markevery=0.1, label='GraphUCB-Local')
+plt.plot(lapucb_regret, '-o', color='r', markevery=0.1, label='GraphUCB')
+plt.plot(club_regret,'-*',color='k',  markevery=0.1, label='CLUB')
 plt.ylabel('Cumulative Regret', fontsize=16)
 plt.xlabel('Time', fontsize=16)
-plt.legend(loc=4, fontsize=16)
+plt.legend(loc=2, fontsize=16)
 plt.tight_layout()
 plt.savefig(path+'netflix'+'.png', dpi=100)
 plt.show()
 
 
+
 plt.figure(figsize=(5,5))
 plt.plot(linucb_error,'-.', markevery=0.1, label='LinUCB')
-plt.plot(gob_error, '-o', color='orange', markevery=0.1, label='GOB')
-plt.plot(lapucb_sim_error, '-s', markevery=0.1, label='G-UCB SIM')
-plt.plot(lapucb_error, '-*', markevery=0.1, label='G-UCB')
-plt.plot(club_error, label='CLUB')
+plt.plot(gob_error, '-p', color='orange', markevery=0.1, label='GOB.Lin')
+plt.plot(lapucb_sim_error, '-s',color='g',  markevery=0.1, label='GraphUCB-Local')
+plt.plot(lapucb_error, '-o',color='r',  markevery=0.1, label='GraphUCB')
+plt.plot(club_error, '-*', color='k', markevery=0.1,  label='CLUB')
 plt.ylabel('Error', fontsize=12)
 plt.xlabel('Time', fontsize=12)
 plt.legend(loc=1, fontsize=12)
 plt.tight_layout()
-plt.savefig(path+'error'+'.png', dpi=100)
+#plt.savefig(path+'error'+'.png', dpi=100)
 plt.show()
 
-
-# plt.figure(figsize=(5,5))
-# plt.plot(linucb_beta,'-.', markevery=0.1, label='LinUCB')
-# plt.plot(gob_beta, '-o', color='orange', markevery=0.1, label='GOB')
-# plt.plot(lapucb_sim_beta, '-s', markevery=0.1, label='G-UCB SIM')
-# plt.plot(lapucb_beta, '-*', markevery=0.1, label='G-UCB')
-# #plt.plot(club_beta, label='CLUB')
-# plt.ylabel('Beta', fontsize=12)
-# plt.xlabel('Time', fontsize=12)
-# plt.legend(loc=1, fontsize=12)
-# plt.tight_layout()
-# plt.savefig(path+'beta'+'.png', dpi=100)
-# plt.show()
-
-
-
-# plt.figure(figsize=(5,5))
-# plt.plot(linucb_x_norm,'-.', markevery=0.1, label='LinUCB')
-# plt.plot(gob_x_norm, '-o', color='orange', markevery=0.1, label='GOB')
-# plt.plot(lapucb_sim_x_norm, '-s', markevery=0.1, label='G-UCB SIM')
-# plt.plot(lapucb_x_norm, '-*', markevery=0.1, label='G-UCB')
-# #plt.plot(club_x_norm, label='CLUB')
-# plt.ylabel('x_norm', fontsize=12)
-# plt.xlabel('Time', fontsize=12)
-# plt.legend(loc=1, fontsize=12)
-# plt.tight_layout()
-# plt.savefig(path+'x_norm'+'.png', dpi=100)
-# plt.show()
-
-
-
-
-# plt.figure(figsize=(5,5))
-# plt.plot(linucb_ucb,'-.', markevery=0.1, label='LinUCB')
-# plt.plot(gob_ucb, '-o', color='orange', markevery=0.1, label='GOB')
-# plt.plot(lapucb_sim_ucb, '-s', markevery=0.1, label='G-UCB SIM')
-# plt.plot(lapucb_ucb, '-*', markevery=0.1, label='G-UCB')
-# #plt.plot(club_x_norm, label='CLUB')
-# plt.ylabel('UCB', fontsize=12)
-# plt.xlabel('Time', fontsize=12)
-# plt.legend(loc=1, fontsize=12)
-# plt.tight_layout()
-# plt.savefig(path+'UCB'+'.png', dpi=100)
-# plt.show()
 
 

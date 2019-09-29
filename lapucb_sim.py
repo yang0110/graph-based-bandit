@@ -39,7 +39,7 @@ class LAPUCB_SIM():
 
 	def initialized_parameter(self):
 		for u in range(self.user_num):
-			self.user_v[u]=self.alpha*self.L[u,u]*np.identity(self.dimension)
+			self.user_v[u]=self.alpha*np.identity(self.dimension)
 			self.user_avg[u]=np.zeros(self.dimension)
 			self.user_xx[u]=0.01*np.identity(self.dimension)
 			self.user_bias[u]=np.zeros(self.dimension)

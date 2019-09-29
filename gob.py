@@ -5,7 +5,7 @@ from scipy.sparse import csgraph
 import scipy
 
 class GOB():
-	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, true_adj,true_lap, alpha, delta, sigma, beta, state):
+	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, true_adj, true_lap, alpha, delta, sigma, b, state):
 		self.true_adj=true_adj
 		self.state=state
 		self.dimension=dimension
@@ -24,15 +24,15 @@ class GOB():
 		self.I=np.identity(self.user_num*self.dimension)
 		self.adj=true_adj
 		self.lap=true_lap
-		self.L=self.lap+np.identity(self.user_num)
+		self.L=self.lap.copy()+0.01*np.identity(self.user_num)
 		self.A=np.kron(self.L, np.identity(self.dimension))
 		self.A_inv=np.linalg.pinv(self.A)
 		self.A_inv_sqrt=scipy.linalg.sqrtm(self.A_inv)
 		self.alpha=alpha
 		self.delta=delta
 		self.sigma=sigma
-		self.beta=beta
-		self.covariance=np.identity(self.user_num*self.dimension)
+		self.b=b
+		self.covariance=self.alpha*self.A
 		self.bias=np.zeros(self.user_num*self.dimension)
 		self.beta_list=[]
 		self.graph_error=[]
@@ -45,7 +45,7 @@ class GOB():
 	def initial(self):
 		for u in range(self.user_num):
 			self.user_xx[u]=np.zeros((self.dimension, self.dimension))
-			self.user_v[u]=np.identity(self.dimension)
+			self.user_v[u]=self.alpha*np.identity(self.dimension)
 			self.user_bias[u]=np.zeros(self.dimension)
 			self.user_counter[u]=0
 
@@ -73,7 +73,7 @@ class GOB():
 				x_long[user_index*self.dimension:(user_index+1)*self.dimension]=x
 				co_x=np.dot(self.A_inv_sqrt, x_long)
 				x_norm=np.sqrt(np.dot(np.dot(co_x, cov_inv), co_x))
-				self.beta=0.1*np.sqrt(np.log(time+1))
+				self.beta=self.b*np.sqrt(np.log(time+1))
 				est_y=np.dot(self.user_feature_vector, co_x)+self.beta*x_norm
 				estimated_payoffs[j]=est_y
 				ucb=self.beta_list[time]*x_norm

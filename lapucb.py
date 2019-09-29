@@ -21,7 +21,7 @@ class LAPUCB():
 		self.thres=thres
 		self.adj=true_adj
 		self.lap=true_lap
-		self.L=self.lap.copy()
+		self.L=self.lap.copy()+0.01*np.identity(user_num)
 		self.A=np.kron(self.L, np.identity(self.dimension))
 		self.A_inv=np.linalg.pinv(self.A)
 		self.XX=np.zeros((self.user_num*self.dimension, self.user_num*self.dimension))
@@ -47,7 +47,7 @@ class LAPUCB():
 
 	def initialized_parameter(self):
 		for u in range(self.user_num):
-			self.user_v[u]=self.alpha*self.L[u,u]*np.identity(self.dimension)
+			self.user_v[u]=self.alpha*np.identity(self.dimension)
 			self.user_avg[u]=np.zeros(self.dimension)
 			self.user_xx[u]=0.01*np.identity(self.dimension)
 			self.user_bias[u]=np.zeros(self.dimension)
@@ -114,7 +114,7 @@ class LAPUCB():
 		v_inv=np.linalg.pinv(self.user_v[user_index])
 		self.user_ls[user_index]=np.dot(xx_inv, self.user_bias[user_index])
 		self.user_ridge[user_index]=np.dot(v_inv, self.user_bias[user_index])
-		self.user_avg[user_index]=np.dot(self.user_ls.T, self.L[user_index])
+		#self.user_avg[user_index]=np.dot(self.user_ls.T, self.L[user_index])
 
 
 	def run(self, user_array, item_pool_array, iteration):
