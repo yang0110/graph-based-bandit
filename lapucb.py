@@ -104,6 +104,7 @@ class LAPUCB():
 		self.user_v[user_index]+=np.outer(x, x)
 		self.user_xx[user_index]+=np.outer(x, x)
 		self.user_bias[user_index]+=true_payoff*x
+		self.user_ls[user_index]=np.dot(np.linalg.pinv(self.user_xx[user_index]), self.user_bias[user_index])
 		self.cov+=np.outer(x_long, x_long)
 		self.XX+=np.outer(x_long, x_long)
 		self.bias+=true_payoff*x_long
