@@ -21,7 +21,7 @@ class LAPUCB():
 		self.thres=thres
 		self.adj=true_adj
 		self.lap=true_lap
-		self.L=self.lap.copy()+0.01*np.identity(user_num)
+		self.L=self.lap.copy()+0.01*np.identity(self.user_num)
 		self.A=np.kron(self.L, np.identity(self.dimension))
 		self.A_inv=np.linalg.pinv(self.A)
 		self.XX=np.zeros((self.user_num*self.dimension, self.user_num*self.dimension))
@@ -49,7 +49,7 @@ class LAPUCB():
 		for u in range(self.user_num):
 			self.user_v[u]=self.alpha*np.identity(self.dimension)
 			self.user_avg[u]=np.zeros(self.dimension)
-			self.user_xx[u]=0.01*np.identity(self.dimension)
+			self.user_xx[u]=0.1*np.identity(self.dimension)
 			self.user_bias[u]=np.zeros(self.dimension)
 			self.user_counter[u]=0
 			self.user_h[u]=np.zeros((self.dimension, self.dimension))
@@ -61,15 +61,14 @@ class LAPUCB():
 				pass
 			else:
 				sum_A+=((self.L[user_index, uu])**2)*np.linalg.inv(self.user_xx[uu])
-		self.user_h[user_index]=self.user_v[user_index]+self.alpha**2*sum_A
-		#+self.alpha*self.L[user_index, user_index]*np.identity(self.dimension)
+		self.user_h[user_index]=self.user_xx[user_index]+self.alpha**2*sum_A+2*self.alpha*self.L[user_index, user_index]*np.identity(self.dimension)
 		a=np.linalg.det(self.user_v[user_index])**(1/2)
 		b=np.linalg.det(self.alpha*np.identity(self.dimension))**(-1/2)
 		d=self.sigma*np.sqrt(2*np.log(a*b/self.delta))
 		if self.user_counter[user_index]==0:
-			self.user_avg[user_index]=self.user_feature_matrix[user_index]
+			self.user_avg[user_index]=np.dot(self.user_ls.T, self.L[user_index])
 		else:
-			self.user_avg[user_index]=np.dot(self.user_feature_matrix.T, self.L[user_index])
+			self.user_avg[user_index]=np.dot(self.user_ls.T, self.L[user_index])
 		c=np.sqrt(self.alpha)*np.linalg.norm(self.user_avg[user_index])
 		self.beta=c+d
 		self.beta_list.extend([self.beta])
@@ -110,11 +109,10 @@ class LAPUCB():
 		self.bias+=true_payoff*x_long
 		self.cov_inv=np.linalg.pinv(self.cov)
 		self.user_feature_matrix=np.dot(self.cov_inv, self.bias).reshape((self.user_num, self.dimension))
-		xx_inv=np.linalg.pinv(self.user_xx[user_index])
-		v_inv=np.linalg.pinv(self.user_v[user_index])
-		self.user_ls[user_index]=np.dot(xx_inv, self.user_bias[user_index])
-		self.user_ridge[user_index]=np.dot(v_inv, self.user_bias[user_index])
-		#self.user_avg[user_index]=np.dot(self.user_ls.T, self.L[user_index])
+		for u in range(self.user_num):
+			v_inv=np.linalg.pinv(self.user_v[u])
+			xx_inv=np.linalg.pinv(self.user_xx[u])
+			self.user_avg[u]=np.dot(self.user_ls.T, self.L[u])
 
 
 	def run(self, user_array, item_pool_array, iteration):

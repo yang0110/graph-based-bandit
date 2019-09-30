@@ -42,16 +42,16 @@ item_pool_seq=np.random.choice(range(item_num), size=(iteration, pool_size))
 item_feature_matrix=Normalizer().fit_transform(np.random.normal(size=(item_num, dimension)))
 noise_matrix=np.random.normal(scale=sigma, size=(user_num, item_num))
 
+length=5
+smooth_list=np.linspace(0,10,length)
+smoothness_list=np.zeros(length)
 
-smooth_list=np.linspace(0,10,5)
-smoothness_list=np.zeros(5)
-
-linucb_regret_matrix=np.zeros((5, iteration))
-linucb_error_matrix=np.zeros((5, iteration))
-lapucb_regret_matrix=np.zeros((5, iteration))
-lapucb_error_matrix=np.zeros((5, iteration))
-lapucb_sim_regret_matrix=np.zeros((5, iteration))
-lapucb_sim_error_matrix=np.zeros((5, iteration))
+linucb_regret_matrix=np.zeros((length, iteration))
+linucb_error_matrix=np.zeros((length, iteration))
+lapucb_regret_matrix=np.zeros((length, iteration))
+lapucb_error_matrix=np.zeros((length, iteration))
+lapucb_sim_regret_matrix=np.zeros((length, iteration))
+lapucb_sim_error_matrix=np.zeros((length, iteration))
 
 linucb_regret_matrix_loop=np.zeros((loop, iteration))
 linucb_error_matrix_loop=np.zeros((loop, iteration))

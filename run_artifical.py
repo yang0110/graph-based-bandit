@@ -42,53 +42,6 @@ item_pool_seq=np.random.choice(range(item_num), size=(iteration, pool_size))
 item_feature_matrix=Normalizer().fit_transform(np.random.normal(size=(item_num, dimension)))
 noise_matrix=np.random.normal(scale=sigma, size=(user_num, item_num))
 
-old_adj=rbf_kernel(np.random.normal(size=(user_num, dimension)), gamma=0.5/dimension)
-np.fill_diagonal(old_adj, 0)
-D=np.diag(np.sum(old_adj, axis=1))
-true_lap=np.zeros((user_num, user_num))
-for i in range(user_num):
-	for j in range(user_num):
-		if D[i,i]==0:
-			true_lap[i,j]=0
-		else:
-			true_lap[i,j]=-old_adj[i,j]/D[i,i]
-
-np.fill_diagonal(true_lap, 1)
-
-user_feature_matrix=dictionary_matrix_generator(user_num, dimension, true_lap, 10)
-smoothness=np.trace(np.dot(np.dot(user_feature_matrix.T, true_lap), user_feature_matrix))
-print('smoothness', smoothness)
-true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)+noise_matrix
-
-
-er_adj=ER_graph(user_num, 0.2)
-er_adj=er_adj*old_adj
-
-ba_adj=BA_graph(user_num, 4)
-ba_adj=ba_adj*old_adj
-
-ws_adj=WS_graph(user_num, 4, 0.2)
-ws_adj=ws_adj*old_adj
-
-true_adj=old_adj.copy()
-# true_adj[true_adj<0.8]=0
-true_adj=er_adj.copy()
-true_adj=ba_adj.copy()
-true_adj=ws_adj.copy()
-sparsity=np.sum(true_adj>0)/(user_num*(user_num-1))
-print('sparsity', sparsity)
-
-D=np.diag(np.sum(true_adj, axis=1))
-true_lap=np.zeros((user_num, user_num))
-for i in range(user_num):
-	for j in range(user_num):
-		if D[i,i]==0:
-			true_lap[i,j]=0
-		else:
-			true_lap[i,j]=-true_adj[i,j]/D[i,i]
-
-np.fill_diagonal(true_lap, 1)
-
 
 # edges=true_adj.ravel()
 # plt.figure(figsize=(5,5))
@@ -99,20 +52,19 @@ np.fill_diagonal(true_lap, 1)
 # plt.savefig(path+'hist_edge_weights'+'.png', dpi=100)
 # plt.show()
 
-
-plot_adj=np.round(true_adj, decimals=2)
-graph, edge_num=create_networkx_graph(user_num, plot_adj)
-labels = nx.get_edge_attributes(graph,'weight')
-edge_weight=plot_adj[np.triu_indices(user_num, 1)]
-edge_color=edge_weight[edge_weight>0]
-pos = nx.spring_layout(graph)
-plt.figure(figsize=(5,5))
-nodes=nx.draw_networkx_nodes(graph, pos, node_size=10, node_color='y')
-edges=nx.draw_networkx_edges(graph, pos, width=0.1, alpha=1, edge_color='k')
-edge_labels=nx.draw_networkx_edge_labels(graph, pos, edge_labels=labels, font_size=8)
-plt.axis('off')
-plt.savefig(path+'network_ws'+'.png', dpi=100)
-plt.show()
+# plot_adj=np.round(true_adj, decimals=2)
+# graph, edge_num=create_networkx_graph(user_num, plot_adj)
+# labels = nx.get_edge_attributes(graph,'weight')
+# edge_weight=plot_adj[np.triu_indices(user_num, 1)]
+# edge_color=edge_weight[edge_weight>0]
+# pos = nx.spring_layout(graph)
+# plt.figure(figsize=(5,5))
+# nodes=nx.draw_networkx_nodes(graph, pos, node_size=10, node_color='y')
+# edges=nx.draw_networkx_edges(graph, pos, width=0.1, alpha=1, edge_color='k')
+# edge_labels=nx.draw_networkx_edge_labels(graph, pos, edge_labels=labels, font_size=8)
+# plt.axis('off')
+# plt.savefig(path+'network_er'+'.png', dpi=100)
+# plt.show()
 
 
 linucb_regret_matrix=np.zeros((loop, iteration))
@@ -128,6 +80,69 @@ club_error_matrix=np.zeros((loop, iteration))
 
 for l in range(loop):
 	print('loop/total_loop', l, loop)
+
+	old_adj=rbf_kernel(np.random.normal(size=(user_num, dimension)), gamma=0.5/dimension)
+	np.fill_diagonal(old_adj, 0)
+	D=np.diag(np.sum(old_adj, axis=1))
+	true_lap=np.zeros((user_num, user_num))
+	for i in range(user_num):
+		for j in range(user_num):
+			if D[i,i]==0:
+				true_lap[i,j]=0
+			else:
+				true_lap[i,j]=-old_adj[i,j]/D[i,i]
+
+	np.fill_diagonal(true_lap, 1)
+
+	user_feature_matrix=dictionary_matrix_generator(user_num, dimension, true_lap, 10)
+	smoothness=np.trace(np.dot(np.dot(user_feature_matrix.T, true_lap), user_feature_matrix))
+	print('smoothness', smoothness)
+	true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)+noise_matrix
+
+
+	er_adj=ER_graph(user_num, 0.2)
+	er_adj=er_adj*old_adj
+
+	ba_adj=BA_graph(user_num, 4)
+	ba_adj=ba_adj*old_adj
+
+	ws_adj=WS_graph(user_num, 4, 0.2)
+	ws_adj=ws_adj*old_adj
+
+	true_adj=old_adj.copy()
+	# true_adj[true_adj<0.8]=0
+	# true_adj=er_adj.copy()
+	# true_adj=ba_adj.copy()
+	# true_adj=ws_adj.copy()
+	sparsity=np.sum(true_adj>0)/(user_num*(user_num-1))
+	print('sparsity', sparsity)
+
+	D=np.diag(np.sum(true_adj, axis=1))
+	true_lap=np.zeros((user_num, user_num))
+	for i in range(user_num):
+		for j in range(user_num):
+			if D[i,i]==0:
+				true_lap[i,j]=0
+			else:
+				true_lap[i,j]=-true_adj[i,j]/D[i,i]
+
+	np.fill_diagonal(true_lap, 1)
+
+
+	plot_adj=np.round(true_adj, decimals=2)
+	graph, edge_num=create_networkx_graph(user_num, plot_adj)
+	labels = nx.get_edge_attributes(graph,'weight')
+	edge_weight=plot_adj[np.triu_indices(user_num, 1)]
+	edge_color=edge_weight[edge_weight>0]
+	pos = nx.spring_layout(graph)
+	plt.figure(figsize=(5,5))
+	nodes=nx.draw_networkx_nodes(graph, pos, node_size=10, node_color='y')
+	edges=nx.draw_networkx_edges(graph, pos, width=0.1, alpha=1, edge_color='k')
+	edge_labels=nx.draw_networkx_edge_labels(graph, pos, edge_labels=labels, font_size=8)
+	plt.axis('off')
+	plt.savefig(path+'network_rbf'+'.png', dpi=100)
+	plt.clf()
+
 	linucb_model=LINUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, alpha, delta, sigma, state)
 	gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, true_lap, alpha, delta, sigma, beta, state)
 	lapucb_model=LAPUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, true_lap, noise_matrix, alpha, delta, sigma, beta, thres, state)
@@ -172,7 +187,7 @@ plt.xlabel('Time', fontsize=16)
 plt.title('sp=%s, sm=%s'%(np.round(sparsity, decimals=2), np.round(smoothness, decimals=2)), fontsize=16)
 plt.legend(loc=1, fontsize=14)
 plt.tight_layout()
-plt.savefig(path+'ws'+'.png', dpi=100)
+plt.savefig(path+'rbf'+'.png', dpi=100)
 plt.show()
 
 

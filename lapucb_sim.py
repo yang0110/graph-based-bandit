@@ -21,7 +21,7 @@ class LAPUCB_SIM():
 		self.thres=thres
 		self.adj=true_adj
 		self.lap=true_lap
-		self.L=self.lap.copy()
+		self.L=self.lap.copy()+0.01*np.identity(self.user_num)
 		self.alpha=alpha
 		self.delta=delta
 		self.sigma=sigma
@@ -41,7 +41,7 @@ class LAPUCB_SIM():
 		for u in range(self.user_num):
 			self.user_v[u]=self.alpha*np.identity(self.dimension)
 			self.user_avg[u]=np.zeros(self.dimension)
-			self.user_xx[u]=0.01*np.identity(self.dimension)
+			self.user_xx[u]=0.1*np.identity(self.dimension)
 			self.user_bias[u]=np.zeros(self.dimension)
 			self.user_counter[u]=0
 			self.user_h[u]=np.zeros((self.dimension, self.dimension))
@@ -53,15 +53,14 @@ class LAPUCB_SIM():
 				pass
 			else:
 				sum_A+=((self.L[user_index, uu])**2)*np.linalg.inv(self.user_xx[uu])
-		self.user_h[user_index]=self.user_v[user_index]+self.alpha**2*sum_A
-		#+self.alpha*self.L[user_index, user_index]*np.identity(self.dimension)
+		self.user_h[user_index]=self.user_xx[user_index]+self.alpha**2*sum_A+2*self.alpha*self.L[user_index, user_index]*np.identity(self.dimension)
 		a=np.linalg.det(self.user_v[user_index])**(1/2)
 		b=np.linalg.det(self.alpha*np.identity(self.dimension))**(-1/2)
 		d=self.sigma*np.sqrt(2*np.log(a*b/self.delta))
 		if self.user_counter[user_index]==0:
-			self.user_avg[user_index]=self.user_feature_matrix[user_index]
+			self.user_avg[user_index]=np.dot(self.user_ls.T, self.L[user_index])
 		else:
-			self.user_avg[user_index]=np.dot(self.user_feature_matrix.T, self.L[user_index])
+			self.user_avg[user_index]=np.dot(self.user_ls.T, self.L[user_index])
 		c=np.sqrt(self.alpha)*np.linalg.norm(self.user_avg[user_index])
 		self.beta=d+c
 		self.beta_list.extend([self.beta])
@@ -100,7 +99,6 @@ class LAPUCB_SIM():
 			v_inv=np.linalg.pinv(self.user_v[u])
 			xx_inv=np.linalg.pinv(self.user_xx[u])
 			self.user_avg[u]=np.dot(self.user_ls.T, self.L[u])
-			#self.user_feature_matrix[u]=self.user_ridge[u]-self.alpha*np.dot(v_inv, self.user_avg[u]-self.user_ls[u])
 			self.user_feature_matrix[u]=self.user_ls[u]-self.alpha*np.dot(v_inv, self.user_avg[u])
 
 	def run(self, user_array, item_pool_array, iteration):

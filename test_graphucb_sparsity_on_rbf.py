@@ -43,17 +43,17 @@ item_feature_matrix=Normalizer().fit_transform(np.random.normal(size=(item_num, 
 noise_matrix=np.random.normal(scale=sigma, size=(user_num, item_num))
 
 
+thres_list=[0, 0.5, 0.6, 0.75, 1.0]
+length=len(thres_list)
+sparsity_list=np.zeros(length)
+smoothness_list=np.zeros(length)
 
-thres_list=np.linspace(0,1,5)
-sparsity_list=np.zeros(5)
-smoothness_list=np.zeros(5)
-
-linucb_regret_matrix=np.zeros((5, iteration))
-linucb_error_matrix=np.zeros((5, iteration))
-lapucb_regret_matrix=np.zeros((5, iteration))
-lapucb_error_matrix=np.zeros((5, iteration))
-lapucb_sim_regret_matrix=np.zeros((5, iteration))
-lapucb_sim_error_matrix=np.zeros((5, iteration))
+linucb_regret_matrix=np.zeros((length, iteration))
+linucb_error_matrix=np.zeros((length, iteration))
+lapucb_regret_matrix=np.zeros((length, iteration))
+lapucb_error_matrix=np.zeros((length, iteration))
+lapucb_sim_regret_matrix=np.zeros((length, iteration))
+lapucb_sim_error_matrix=np.zeros((length, iteration))
 
 linucb_regret_matrix_loop=np.zeros((loop, iteration))
 linucb_error_matrix_loop=np.zeros((loop, iteration))
@@ -77,7 +77,7 @@ for index, thres in enumerate(thres_list):
 
 		np.fill_diagonal(true_lap, 1)
 
-		user_feature_matrix=dictionary_matrix_generator(user_num, dimension, true_lap, 10)
+		user_feature_matrix=dictionary_matrix_generator(user_num, dimension, true_lap, 5)
 		true_payoffs=np.dot(user_feature_matrix, item_feature_matrix.T)
 		true_adj=old_adj.copy()
 		true_adj[true_adj<thres]=0
@@ -110,11 +110,10 @@ for index, thres in enumerate(thres_list):
 	lapucb_sim_regret_matrix[index], lapucb_sim_error_matrix[index]=np.mean(lapucb_sim_regret_matrix_loop, axis=0), np.mean(lapucb_sim_error_matrix_loop, axis=0)
 
 
-
 plt.figure(figsize=(5,5))
 # plt.plot(linucb_regret_matrix[0], label='LinUCB')
 for ind, sp in enumerate(sparsity_list):
-	plt.plot(lapucb_regret_matrix[ind], label='sp=%s'%(np.round(sparsity_list[ind], decimals=2)))
+	plt.plot(lapucb_regret_matrix[ind], label='s=%s, sp=%s, sm=%s'%(np.round(thres_list[ind], decimals=2),np.round(sparsity_list[ind], decimals=2),np.round(smoothness_list[ind], decimals=2)))
 plt.ylim([0,80])
 plt.ylabel('Cumulative Regret', fontsize=16)
 plt.xlabel('Time', fontsize=16)
@@ -128,7 +127,7 @@ plt.show()
 plt.figure(figsize=(5,5))
 # plt.plot(linucb_regret_matrix[0], label='LinUCB')
 for ind, sp in enumerate(sparsity_list):
-	plt.plot(lapucb_sim_regret_matrix[ind], '-*', markevery=0.1, label='sp=%s'%(np.round(sparsity_list[ind], decimals=2)))
+	plt.plot(lapucb_sim_regret_matrix[ind], '-*', markevery=0.1, label='s=%s, sp=%s, sm=%s'%(np.round(thres_list[ind], decimals=2),np.round(sparsity_list[ind], decimals=2),np.round(smoothness_list[ind], decimals=2)))
 plt.ylim([0,80])
 plt.ylabel('Cumulative Regret', fontsize=16)
 plt.xlabel('Time', fontsize=16)

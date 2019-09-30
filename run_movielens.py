@@ -9,7 +9,7 @@ from scipy.sparse import csgraph
 import scipy
 import os 
 from sklearn import datasets
-os.chdir('/Kaige_Research/Code/graph_bandit/code/')
+# os.chdir('/Kaige_Research/Code/graph_bandit/code/')
 from linucb import LINUCB
 from t_sampling import TS
 from gob import GOB 
@@ -20,17 +20,17 @@ from utils import *
 path='../bandit_results/movielens/'
 #np.random.seed(2018)
 
-user_num=30
+user_num=20
 item_num=300
 dimension=10
 pool_size=20
 iteration=1000
-loop=5
+loop=1
 sigma=0.01# noise
-delta=0.1# high probability
+delta=0.01# high probability
 alpha=0.25# regularizer
 alpha_2=0.125# edge delete CLUB
-beta=0.125 # exploration for CLUB, SCLUB and GOB
+beta=0.25 # exploration for CLUB, SCLUB and GOB
 state=False # False for artificial dataset, True for real dataset
 thres=0
 
@@ -57,7 +57,6 @@ lapucb_sim_graph_matrix=np.zeros((loop, iteration))
 
 for l in range(loop):
 	print('loop/total_loop', l, loop)
-
 	user_list=np.random.choice(range(user_length), size=user_num)
 	item_list=np.random.choice(range(item_length), size=300)
 	user_feature_matrix=user_feature_matrix_ori[user_list]
@@ -67,16 +66,18 @@ for l in range(loop):
 	user_seq=np.random.choice(range(user_num), size=iteration)
 	item_pool_seq=np.random.choice(range(item_num), size=(iteration, pool_size))
 	
-	true_adj=rbf_kernel(user_feature_matrix, gamma=0.5)
+	true_adj=rbf_kernel(user_feature_matrix, gamma=2)
 	np.fill_diagonal(true_adj,0)
-	# edges=true_adj.ravel()
-	# plt.figure(figsize=(5,5))
-	# plt.hist(edges)
-	# plt.ylabel('Counts', fontsize=12)
-	# plt.xlabel('Edge weights', fontsize=12)
-	# plt.tight_layout()
-	# plt.savefig(path+'hist_edge_weights_movielens'+'.png', dpi=100)
-	# plt.show()
+
+	edges=true_adj.ravel()
+	plt.figure(figsize=(5,5))
+	plt.hist(edges)
+	plt.ylabel('Counts', fontsize=12)
+	plt.xlabel('Edge weights', fontsize=12)
+	plt.tight_layout()
+	plt.savefig(path+'hist_edge_weights_movielens'+'.png', dpi=100)
+	plt.show()
+
 	D=np.diag(np.sum(true_adj, axis=1))
 	lap=D-true_adj
 	true_lap=np.zeros((user_num, user_num))
@@ -89,20 +90,20 @@ for l in range(loop):
 
 	np.fill_diagonal(true_lap, 1)
 
-	# payoffs=true_payoffs.ravel()
-	# plt.figure(figsize=(5,5))
-	# plt.hist(payoffs)
-	# plt.ylabel('Counts', fontsize=12)
-	# plt.xlabel('Payoffs', fontsize=12)
-	# plt.tight_layout()
-	# plt.savefig(path+'hist_payoffs_movielens'+'.png', dpi=100)
-	# plt.show()
+	payoffs=true_payoffs.ravel()
+	plt.figure(figsize=(5,5))
+	plt.hist(payoffs)
+	plt.ylabel('Counts', fontsize=12)
+	plt.xlabel('Payoffs', fontsize=12)
+	plt.tight_layout()
+	plt.savefig(path+'hist_payoffs_movielens'+'.png', dpi=100)
+	plt.show()
 
 	linucb_model=LINUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, 0.25, delta, sigma, state)
-	gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, true_lap, 0.25, delta, sigma, 0.05, state)
+	gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, true_lap, 0.25, delta, sigma, 0.15, state)
 	lapucb_model=LAPUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, true_lap, noise_matrix, 0.25, delta, sigma, beta, thres, state)
 	lapucb_sim_model=LAPUCB_SIM(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, true_lap, noise_matrix, 0.25, delta, sigma, beta, thres, state)
-	club_model = CLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, 0.25, 0.25, delta, sigma, beta, state)
+	club_model = CLUB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, 0.5, 0.15, delta, sigma, beta, state)
 
 	linucb_regret, linucb_error, linucb_beta, linucb_x_norm, linucb_inst_regret, linucb_ucb, linucb_sum_x_norm, linucb_real_beta=linucb_model.run(user_seq, item_pool_seq, iteration)
 	gob_regret, gob_error, gob_beta,  gob_x_norm, gob_ucb, gob_sum_x_norm, gob_real_beta=gob_model.run(user_seq, item_pool_seq, iteration)
@@ -168,3 +169,4 @@ plt.plot(club_cluster_num, label='Club')
 plt.ylabel('cluster num')
 plt.xlabel('Time')
 plt.show()
+
