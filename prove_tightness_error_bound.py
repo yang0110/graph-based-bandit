@@ -11,7 +11,7 @@ os.chdir('C:/Kaige_Research/Code/graph_bandit/code/')
 from utils import *
 path='../est_error_bound_ucb_results/'
 
-user_num=10
+user_num=20
 item_num=500
 dimension=10
 alpha=1

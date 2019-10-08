@@ -9,7 +9,7 @@ from scipy.sparse import csgraph
 import scipy
 import os 
 from sklearn import datasets
-os.chdir('/Kaige_Research/Code/graph_bandit/code/')
+# os.chdir('/Kaige_Research/Code/graph_bandit/code/')
 from linucb import LINUCB
 from t_sampling import TS
 from gob import GOB 
@@ -56,8 +56,8 @@ for index, lambda_ in enumerate(lambda_list):
 
 smoothness_list=np.round(smoothness_list, decimals=2)
 plt.figure(figsize=(5,5))
-p=plt.plot(lambda_list, average_local)
-plt.xlabel('Smooth regularizer', fontsize=14)
+p=plt.plot(smoothness_list, average_local)
+plt.xlabel('Smoothness', fontsize=16)
 plt.ylabel('Norm of Delta', fontsize=16)
 #plt.legend(p, degree[:5])
 plt.tight_layout()
