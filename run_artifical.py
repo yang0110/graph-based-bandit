@@ -9,7 +9,7 @@ from scipy.sparse import csgraph
 import scipy
 import os 
 from sklearn import datasets
-# os.chdir('Users/kaigeyang/Documents/research/bandit/code/graph_based_bandit/')
+# os.chdir('C:/Kaige_Research/Code/graph_bandit/code/')
 from linucb import LINUCB
 from t_sampling import TS
 from gob import GOB 
@@ -25,13 +25,13 @@ item_num=500
 dimension=5
 pool_size=20
 iteration=1000
-loop=5
+loop=1
 sigma=0.01# noise
 delta=0.1# high probability
 alpha=1 # regularizer
 alpha_2=0.15# edge delete CLUB
 epsilon=8 # Ts
-beta=0.1 # exploration for CLUB, SCLUB and GOB
+beta=0.125 # exploration for CLUB, SCLUB and GOB
 thres=0.0
 state=False # False for artificial dataset, True for real dataset
 lambda_list=[4]
@@ -44,7 +44,7 @@ noise_matrix=np.random.normal(scale=sigma, size=(user_num, item_num))
 # old_adj=rbf_kernel(np.random.normal(size=(user_num, dimension)), gamma=0.5/dimension)
 # np.fill_diagonal(old_adj, 0)
 # np.save(path+'random_graph_weights.npy', old_adj)
-old_adj=np.load(path+'random_graph_weights.npy')
+# old_adj=np.load(path+'random_graph_weights.npy')
 
 # print('edge num', np.sum(old_adj>0))
 # D=np.diag(np.sum(old_adj, axis=1))
@@ -68,8 +68,8 @@ er_adj=er_adj
 ba_adj=np.load(path+'ba_binary_graph.npy')
 ba_adj=ba_adj
 
-# ws_adj=WS_graph(user_num, 8, 0.2)
-# np.save(path+'ws_binary_graph.npy', ws_adj)
+ws_adj=WS_graph(user_num, 8, 0.2)
+np.save(path+'ws_binary_graph.npy', ws_adj)
 ws_adj=np.load(path+'ws_binary_graph.npy')
 ws_adj=ws_adj
 
@@ -82,11 +82,11 @@ rbf_adj=np.load(path+'rbf_sparse_graph.npy')
 # rbf_binary=rbf_adj.copy()
 true_adj=rbf_adj.copy()
 print('rbf_edge num', np.sum(true_adj>0)/(user_num*(user_num-1)))
-# true_adj=er_adj.copy()
+true_adj=er_adj.copy()
 print('er_edge num', np.sum(er_adj>0)/(user_num*(user_num-1)))
-# true_adj=ba_adj.copy()
+true_adj=ba_adj.copy()
 print('ba_edge num', np.sum(ba_adj>0)/(user_num*(user_num-1)))
-# true_adj=ws_adj.copy()
+true_adj=ws_adj.copy()
 print('ws_edge num', np.sum(ws_adj>0)/(user_num*(user_num-1)))
 
 sparsity=np.sum(true_adj>0)/(user_num*(user_num-1))
@@ -116,7 +116,7 @@ nodes=nx.draw_networkx_nodes(graph, pos, node_size=10, node_color='y')
 edges=nx.draw_networkx_edges(graph, pos, width=0.1, alpha=1, edge_color='k')
 edge_labels=nx.draw_networkx_edge_labels(graph, pos, edge_labels=labels, font_size=8)
 plt.axis('off')
-plt.savefig(path+'network_rbf'+'.png', dpi=100)
+plt.savefig(path+'network_ws'+'.png', dpi=100)
 plt.show()
 
 
@@ -183,18 +183,18 @@ club_regret=np.mean(club_regret_matrix, axis=0)
 club_error=np.mean(club_error_matrix, axis=0)
 
 plt.figure(figsize=(5,5))
-plt.plot(linucb_regret,'-.', markevery=0.1, label='LinUCB')
-plt.plot(gob_regret, '-p', color='orange', markevery=0.1, label='GOB.Lin')
-plt.plot(lapucb_sim_regret, '-s', color='g', markevery=0.1, label='GraphUCB-Local')
-plt.plot(lapucb_regret, '-o', color='r', markevery=0.1, label='GraphUCB')
-plt.plot(club_regret,'-*', color='k', markevery=0.1, label='CLUB')
+plt.plot(linucb_regret,'-.', markevery=0.1, linewidth=2, markersize=8, label='LinUCB')
+plt.plot(gob_regret, '-p', color='orange', markevery=0.1,linewidth=2, markersize=8,  label='GOB.Lin')
+plt.plot(lapucb_sim_regret, '-s', color='g', markevery=0.1, linewidth=2, markersize=8, label='GraphUCB-Local')
+plt.plot(lapucb_regret, '-o', color='r', markevery=0.1,linewidth=2, markersize=8,  label='GraphUCB')
+plt.plot(club_regret,'-*', color='k', markevery=0.1,linewidth=2, markersize=8,  label='CLUB')
 plt.ylabel('Cumulative Regret', fontsize=16)
 plt.xlabel('Time', fontsize=16)
 plt.ylim([0,80])
 # plt.title('sp=%s, sm=%s'%(np.round(sparsity, decimals=1), np.round(smoothness, decimals=1)), fontsize=16)
 plt.legend(loc=1, fontsize=14)
 plt.tight_layout()
-plt.savefig(path+'rbf'+'.png', dpi=100)
+plt.savefig(path+'ws'+'.png', dpi=100)
 plt.show()
 
 

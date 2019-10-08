@@ -25,7 +25,7 @@ item_num=500
 dimension=5
 pool_size=20
 iteration=1000
-loop=5
+loop=1
 sigma=0.01# noise
 delta=0.1# high probability
 alpha=1# regularizer
@@ -135,11 +135,11 @@ for index, thres in enumerate(thres_list):
 
 
 plt.figure(figsize=(5,5))
-plt.plot(thres_list, cum_matrix[0], '-', label='LinUCB')
-plt.plot(thres_list, cum_matrix[1], '-p',color='orange', markevery=0.1, label='Gob.Lin')
-plt.plot(thres_list, cum_matrix[4], '-s',color='g', markevery=0.1, label='GraphUCB-Local')
-plt.plot(thres_list, cum_matrix[3], '-o',color='r', markevery=0.1, label='GraphUCB')
-plt.plot(thres_list, cum_matrix[2], '-*',color='k', markevery=0.1, label='CLUB')
+plt.plot(thres_list, cum_matrix[0], '-.', markevery=0.1, linewidth=2, markersize=8,label='LinUCB')
+plt.plot(thres_list, cum_matrix[1], '-p',color='orange', markevery=0.1,linewidth=2, markersize=8, label='Gob.Lin')
+plt.plot(thres_list, cum_matrix[4], '-s',color='g', markevery=0.1,linewidth=2, markersize=8, label='GraphUCB-Local')
+plt.plot(thres_list, cum_matrix[3], '-o',color='r', markevery=0.1,linewidth=2, markersize=8, label='GraphUCB')
+plt.plot(thres_list, cum_matrix[2], '-*',color='k', markevery=0.1,linewidth=2, markersize=8, label='CLUB')
 plt.legend(loc=1, fontsize=14)
 plt.xlabel('s', fontsize=16)
 plt.ylim([0,80])
@@ -147,3 +147,5 @@ plt.ylabel('Cumulative Regret', fontsize=16)
 plt.tight_layout()
 plt.savefig(path+'threshold_rbf'+'.png', dpi=100)
 plt.show()
+
+np.save(path+'cum_regret_sparsity_rbf_all_algorithms.npy', cum_matrix)

@@ -9,7 +9,7 @@ from scipy.sparse import csgraph
 import scipy
 import os 
 from sklearn import datasets
-# os.chdir('Users/kaigeyang/Documents/research/bandit/code/graph_based_bandit/')
+os.chdir('/Kaige_Research/Code/graph_bandit/code/')
 from linucb import LINUCB
 from t_sampling import TS
 from gob import GOB 
@@ -25,7 +25,7 @@ item_num=500
 dimension=5
 pool_size=20
 iteration=1000
-loop=5
+loop=1
 sigma=0.01# noise
 delta=0.1# high probability
 alpha=1 # regularizer
@@ -45,7 +45,7 @@ noise_matrix=np.random.normal(scale=sigma, size=(user_num, item_num))
 old_adj=np.load(path+'random_graph_weights.npy')
 rbf_adj=np.load(path+'rbf_sparse_graph.npy')
 rbf_adj[rbf_adj>0]=1
-# rbf_adj=rbf_adj*old_adj
+rbf_adj=rbf_adj*old_adj
 true_adj=rbf_adj.copy()
 sparsity=np.sum(true_adj>0)/(user_num*(user_num-1))
 print('sparsity', sparsity)
@@ -103,7 +103,7 @@ for index, smooth in enumerate(smooth_list):
 plt.figure(figsize=(5,5))
 plt.plot(smoothness_list, local_regret, '-s', color='g',markevery=0.1, label='GraphUCB-Local')
 plt.plot(smoothness_list, graphucb_regret, '-o', color='r',markevery=0.1, label='GraphUCB')
-plt.xlabel('Smoothness', fontsize=16)
+plt.xlabel(r'$\gamma$', fontsize=16)
 plt.ylabel('Cumulative Regret', fontsize=16)
 plt.legend(loc=0, fontsize=14)
 plt.tight_layout()

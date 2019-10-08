@@ -9,7 +9,7 @@ from scipy.sparse import csgraph
 import scipy
 import os 
 from sklearn import datasets
-# os.chdir('/Kaige_Research/Code/graph_bandit/code/')
+os.chdir('/Kaige_Research/Code/graph_bandit/code/')
 from linucb import LINUCB
 from t_sampling import TS
 from gob import GOB 
@@ -25,7 +25,7 @@ item_num=300
 dimension=10
 pool_size=20
 iteration=1000
-loop=1
+loop=5
 sigma=0.01# noise
 delta=0.01# high probability
 alpha=0.25# regularizer
@@ -69,14 +69,14 @@ for l in range(loop):
 	true_adj=rbf_kernel(user_feature_matrix, gamma=2)
 	np.fill_diagonal(true_adj,0)
 
-	edges=true_adj.ravel()
-	plt.figure(figsize=(5,5))
-	plt.hist(edges)
-	plt.ylabel('Counts', fontsize=12)
-	plt.xlabel('Edge weights', fontsize=12)
-	plt.tight_layout()
-	plt.savefig(path+'hist_edge_weights_movielens'+'.png', dpi=100)
-	plt.show()
+	# edges=true_adj.ravel()
+	# plt.figure(figsize=(5,5))
+	# plt.hist(edges)
+	# plt.ylabel('Counts', fontsize=12)
+	# plt.xlabel('Edge weights', fontsize=12)
+	# plt.tight_layout()
+	# plt.savefig(path+'hist_edge_weights_movielens'+'.png', dpi=100)
+	# plt.show()
 
 	D=np.diag(np.sum(true_adj, axis=1))
 	lap=D-true_adj
@@ -90,14 +90,14 @@ for l in range(loop):
 
 	np.fill_diagonal(true_lap, 1)
 
-	payoffs=true_payoffs.ravel()
-	plt.figure(figsize=(5,5))
-	plt.hist(payoffs)
-	plt.ylabel('Counts', fontsize=12)
-	plt.xlabel('Payoffs', fontsize=12)
-	plt.tight_layout()
-	plt.savefig(path+'hist_payoffs_movielens'+'.png', dpi=100)
-	plt.show()
+	# payoffs=true_payoffs.ravel()
+	# plt.figure(figsize=(5,5))
+	# plt.hist(payoffs)
+	# plt.ylabel('Counts', fontsize=12)
+	# plt.xlabel('Payoffs', fontsize=12)
+	# plt.tight_layout()
+	# plt.savefig(path+'hist_payoffs_movielens'+'.png', dpi=100)
+	# plt.show()
 
 	linucb_model=LINUCB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, 0.25, delta, sigma, state)
 	gob_model=GOB(dimension, user_num, item_num, pool_size, item_feature_matrix, user_feature_matrix, true_payoffs, true_adj, true_lap, 0.25, delta, sigma, 0.15, state)
@@ -135,18 +135,17 @@ club_error=np.mean(club_error_matrix, axis=0)
 
 
 plt.figure(figsize=(5,5))
-plt.plot(linucb_regret,'-.', markevery=0.1, label='LinUCB')
-plt.plot(gob_regret, '-p', color='orange', markevery=0.1, label='GOB.Lin')
-plt.plot(lapucb_sim_regret, '-s', color='g', markevery=0.1, label='GraphUCB-Local')
-plt.plot(lapucb_regret, '-o', color='r', markevery=0.1, label='GraphUCB')
-plt.plot(club_regret,'-*',color='k',  markevery=0.1, label='CLUB')
+plt.plot(linucb_regret,'-.', markevery=0.1,linewidth=2, markersize=8, label='LinUCB')
+plt.plot(gob_regret, '-p', color='orange', markevery=0.1,linewidth=2, markersize=8, label='GOB.Lin')
+plt.plot(lapucb_sim_regret, '-s', color='g', markevery=0.1,linewidth=2, markersize=8, label='GraphUCB-Local')
+plt.plot(lapucb_regret, '-o', color='r', markevery=0.1,linewidth=2, markersize=8, label='GraphUCB')
+plt.plot(club_regret,'-*',color='k',  markevery=0.1,linewidth=2, markersize=8, label='CLUB')
 plt.ylabel('Cumulative Regret', fontsize=16)
 plt.xlabel('Time', fontsize=16)
-plt.legend(loc=2, fontsize=16)
+plt.legend(loc=0, fontsize=16)
 plt.tight_layout()
-plt.savefig(path+'movielens'+'.png', dpi=100)
+plt.savefig(path+'movielens_backup'+'.png', dpi=100)
 plt.show()
-
 
 
 plt.figure(figsize=(5,5))

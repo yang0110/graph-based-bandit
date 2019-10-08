@@ -9,7 +9,7 @@ from scipy.sparse import csgraph
 import scipy
 import os 
 from sklearn import datasets
-# os.chdir('/Kaige_Research/Code/graph_bandit/code/')
+os.chdir('/Kaige_Research/Code/graph_bandit/code/')
 from linucb import LINUCB
 from t_sampling import TS
 from gob import GOB 
@@ -25,7 +25,7 @@ item_num=500
 dimension=5
 pool_size=20
 iteration=1000
-loop=5
+loop=1
 sigma=0.01# noise
 delta=0.1# high probability
 alpha=1# regularizer
@@ -49,9 +49,9 @@ user_feature_matrix=dictionary_matrix_generator(user_num, dimension, true_lap, 1
 smoothness=np.trace(np.dot(np.dot(user_feature_matrix.T, true_lap), user_feature_matrix))
 print('smoothness', smoothness)
 
-cum_matrix=np.zeros((5, 10))
-smooth_list=np.round(np.linspace(0,50,10), decimals=2)
-smoothness_list=np.zeros(10)
+cum_matrix=np.zeros((5,20))
+smooth_list=np.round(np.linspace(0,20,20), decimals=2)
+smoothness_list=np.zeros(20)
 for index, smooth in enumerate(smooth_list):
 	linucb_regret_matrix=np.zeros((loop, iteration))
 	linucb_error_matrix=np.zeros((loop, iteration))
@@ -127,17 +127,34 @@ for index, smooth in enumerate(smooth_list):
 
 smoothness_list=np.round(smoothness_list, decimals=2)
 plt.figure(figsize=(5,5))
-plt.plot(smoothness_list, cum_matrix[0], '-', label='LinUCB')
-plt.plot(smoothness_list, cum_matrix[1], '-p',color='orange', markevery=0.1, label='Gob.Lin')
-plt.plot(smoothness_list, cum_matrix[4], '-s', color='g', markevery=0.1, label='GraphUCB-Local')
-plt.plot(smoothness_list, cum_matrix[3], '-o', color='r', markevery=0.1, label='GraphUCB')
-plt.plot(smoothness_list, cum_matrix[2], '-*', color='k', markevery=0.1, label='CLUB')
+plt.plot(smooth_list, cum_matrix[0], '-.',markevery=0.1, linewidth=2, markersize=8, label='LinUCB')
+plt.plot(smooth_list, cum_matrix[1], '-p',color='orange', markevery=0.1,linewidth=2, markersize=8, label='Gob.Lin')
+plt.plot(smooth_list, cum_matrix[4], '-s', color='g', markevery=0.1,linewidth=2, markersize=8, label='GraphUCB-Local')
+plt.plot(smooth_list, cum_matrix[3], '-o', color='r', markevery=0.1,linewidth=2, markersize=8, label='GraphUCB')
+plt.plot(smooth_list, cum_matrix[2], '-*', color='k', markevery=0.1,linewidth=2, markersize=8, label='CLUB')
+plt.legend(loc=4, fontsize=14)
+plt.ylim([0,80])
+plt.xlabel(r'$\gamma$', fontsize=16)
+plt.ylabel('Cumulative Regret', fontsize=16)
+# plt.tight_layout()
+plt.savefig(path+'smooth_rbf'+'.png', dpi=100)
+plt.show()
+
+np.save(path+'cum_regret_smoothness_rbf_all_algorithms.npy', cum_matrix)
+
+
+cum_matrix=np.load(path+'cum_regret_smoothness_rbf_all_algorithms.npy')
+smooth_list=np.round(np.linspace(0,20,10), decimals=2)
+plt.figure(figsize=(5,5))
+plt.plot(smooth_list, cum_matrix[0], '-.',markevery=0.1, linewidth=2, markersize=8, label='LinUCB')
+plt.plot(smooth_list, cum_matrix[1], '-p',color='orange', markevery=0.1,linewidth=2, markersize=8, label='Gob.Lin')
+plt.plot(smooth_list, cum_matrix[4], '-s', color='g', markevery=0.1,linewidth=2, markersize=8, label='GraphUCB-Local')
+plt.plot(smooth_list, cum_matrix[3], '-o', color='r', markevery=0.1,linewidth=2, markersize=8, label='GraphUCB')
+plt.plot(smooth_list, cum_matrix[2], '-*', color='k', markevery=0.1,linewidth=2, markersize=8, label='CLUB')
 plt.legend(loc=1, fontsize=14)
 plt.ylim([0,80])
-plt.xlabel('Smoothness', fontsize=16)
+plt.xlabel(r'$\gamma$', fontsize=16)
 plt.ylabel('Cumulative Regret', fontsize=16)
 plt.tight_layout()
 plt.savefig(path+'smooth_rbf'+'.png', dpi=100)
 plt.show()
-
-
