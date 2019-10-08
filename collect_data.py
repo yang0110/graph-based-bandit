@@ -52,7 +52,7 @@ plt.plot(smoothness_list, graphucb_local_ba, '-p',color='r', markevery=0.1, labe
 plt.plot(smoothness_list, graphucb_local_ws, '-s',color='k', markevery=0.1, label='WS')
 plt.xlabel('Smoothness', fontsize=16)
 plt.ylabel('Cumulative Regret', fontsize=16)
-plt.title('sp=0.4', fontsize=16)
+# plt.title('sp=0.4', fontsize=16)
 plt.legend(loc=0, fontsize=14)
 plt.ylim([0,80])
 plt.tight_layout()
