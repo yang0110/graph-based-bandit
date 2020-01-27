@@ -6,9 +6,10 @@ import scipy
 import os 
 
 class LINUCB():
-	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, alpha, delta, sigma, state):
+	def __init__(self, dimension, iteration, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, alpha, delta, sigma, state):
 		self.state=state
 		self.dimension=dimension
+		self.iteration=iteration
 		self.user_num=user_num
 		self.item_num=item_num
 		self.pool_size=pool_size
@@ -33,10 +34,11 @@ class LINUCB():
 			self.user_xx[u]=0.01*np.identity(self.dimension)
 			self.user_bias[u]=np.zeros(self.dimension)
 
-	def update_beta(self, user_index):
+	def update_beta(self, user_index, time):
 		a = np.linalg.det(self.user_cov[user_index])**(1/2)
 		b = np.linalg.det(self.alpha*self.I)**(-1/2)
 		self.beta=self.sigma*np.sqrt(2*np.log(a*b/self.delta))+np.sqrt(self.alpha)*np.linalg.norm(self.user_feature[user_index])
+		#self.beta=np.sqrt(self.alpha)+np.sqrt(2*np.log(1/self.delta)+self.dimension*np.log(1+time/(self.dimension*self.alpha)))
 		self.beta_list.extend([self.beta])
 		real_beta=np.sqrt(np.dot(np.dot(self.user_feature[user_index]-self.true_user_feature_matrix[user_index], self.user_cov[user_index]),self.user_feature[user_index]-self.true_user_feature_matrix[user_index]))
 		self.real_beta_list.extend([real_beta])
@@ -45,7 +47,7 @@ class LINUCB():
 		item_fs=self.item_feature_matrix[item_pool]
 		estimated_payoffs=np.zeros(self.pool_size)
 		cov_inv=np.linalg.pinv(self.user_cov[user_index])
-		self.update_beta(user_index)
+		self.update_beta(user_index, time)
 		for j in range(self.pool_size):
 			x=item_fs[j]
 			x_norm=np.sqrt(np.dot(np.dot(x, cov_inv),x))
@@ -53,11 +55,10 @@ class LINUCB():
 			estimated_payoffs[j]=est_y
 			ucb=self.beta*x_norm
 
-
 		max_index=np.argmax(estimated_payoffs)
 		selected_item_index=item_pool[max_index]
 		selected_item_feature=item_fs[max_index]
-		true_payoff=self.true_payoffs[user_index, selected_item_index]
+		true_payoff=self.true_payoffs[user_index, selected_item_index]+np.random.normal(scale=self.sigma)
 		max_ideal_payoff=np.max(self.true_payoffs[user_index][item_pool])
 		regret=max_ideal_payoff-true_payoff
 		return true_payoff, selected_item_feature, regret, x_norm, ucb

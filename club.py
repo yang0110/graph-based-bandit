@@ -8,9 +8,10 @@ from utils import *
 from scipy.sparse.csgraph import connected_components
 
 class CLUB():
-	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, alpha, alpha_2, delta, sigma, beta, state):
+	def __init__(self, dimension, iteration, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, alpha, alpha_2, delta, sigma, beta, state):
 		self.state=state
 		self.dimension=dimension
+		self.iteration=iteration
 		self.user_num=user_num
 		self.item_num=item_num
 		self.pool_size=pool_size
@@ -75,6 +76,8 @@ class CLUB():
 		a=np.linalg.det(cluster_cov)**(1/2)
 		b=np.linalg.det(self.alpha*np.identity(self.dimension))**(-1/2)
 		self.beta=self.sigma*np.sqrt(2*np.log(a*b/self.delta))+np.sqrt(self.alpha)*np.linalg.norm(self.user_feature[user_index])
+		self.beta=np.sqrt(self.alpha)+np.sqrt(2*np.log(1/self.delta)+self.dimension*np.log(1+self.iteration/(self.dimension*self.alpha)))
+
 		self.beta_list.extend([self.beta])
 
 	def select_item(self, user_index, item_pool, time):
@@ -92,7 +95,7 @@ class CLUB():
 		itt=np.argmax(est_payoffs)
 		id_=item_pool[itt]
 		selected_item_feature=self.item_feature_matrix[id_]
-		true_payoff=self.true_payoffs[user_index, id_]
+		true_payoff=self.true_payoffs[user_index, id_]+np.random.normal(scale=self.sigma)
 		true_max_payoff=np.max(self.true_payoffs[user_index][item_pool])
 		regret=true_max_payoff-true_payoff
 		return true_payoff, regret, selected_item_feature, x_norm

@@ -135,7 +135,7 @@ club_error=np.mean(club_error_matrix, axis=0)
 
 
 plt.figure(figsize=(5,5))
-plt.plot(linucb_regret,'-.', markevery=0.1,linewidth=2, markersize=8, label='LinUCB')
+plt.plot(linucb_regret,'-.', markevery=0.1, linewidth=2, markersize=8, label='LinUCB')
 plt.plot(gob_regret, '-p', color='orange', markevery=0.1,linewidth=2, markersize=8, label='GOB.Lin')
 plt.plot(lapucb_sim_regret, '-s', color='g', markevery=0.1,linewidth=2, markersize=8, label='GraphUCB-Local')
 plt.plot(lapucb_regret, '-o', color='r', markevery=0.1,linewidth=2, markersize=8, label='GraphUCB')

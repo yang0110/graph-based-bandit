@@ -65,7 +65,7 @@ def graph_signal_samples_from_laplacian(laplacian, node_num, dimension):
 	return samples 
 
 def dictionary_matrix_generator(node_num, dimension, laplacian, lambda_):
-	np.random.seed(2018)
+	# np.random.seed(2018)
 	D0=np.random.normal(size=(node_num, dimension))
 	D=np.dot(np.linalg.pinv(np.identity(node_num)+lambda_*laplacian), D0)
 	D=Normalizer().fit_transform(D)

@@ -6,17 +6,17 @@ import scipy
 import os 
 
 class LAPUCB(): 
-	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, true_adj,true_lap, noise_matrix, alpha, delta, sigma, beta, thres, state):
+	def __init__(self, dimension, iteration, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, true_adj, true_lap, alpha, delta, sigma, beta, thres, state):
 		self.true_adj=true_adj
 		self.state=state
 		self.dimension=dimension
+		self.iteration=iteration
 		self.user_num=user_num
 		self.item_num=item_num
 		self.pool_size=pool_size
 		self.item_feature_matrix=item_feature_matrix
 		self.true_user_feature_matrix=true_user_feature_matrix
 		self.true_payoffs=true_payoffs
-		self.noise_matrix=noise_matrix
 		self.user_feature_matrix=np.zeros((self.user_num, self.dimension))
 		self.thres=thres
 		self.adj=true_adj
@@ -66,9 +66,16 @@ class LAPUCB():
 		b=np.linalg.det(self.alpha*np.identity(self.dimension))**(-1/2)
 		d=self.sigma*np.sqrt(2*np.log(a*b/self.delta))
 		if self.user_counter[user_index]==0:
-			self.user_avg[user_index]=np.dot(self.user_ls.T, self.L[user_index])
+			if self.state==1:
+				self.user_avg[user_index]=np.dot(self.user_ls.T, self.L[user_index])
+			else:
+				self.user_avg[user_index]=np.dot(self.true_user_feature_matrix.T, self.L[user_index])
 		else:
-			self.user_avg[user_index]=np.dot(self.user_ls.T, self.L[user_index])
+			if self.state==1:
+				self.user_avg[user_index]=np.dot(self.user_ls.T, self.L[user_index])
+			else:
+				self.user_avg[user_index]=np.dot(self.true_user_feature_matrix.T, self.L[user_index])
+
 		c=np.sqrt(self.alpha)*np.linalg.norm(self.user_avg[user_index])
 		self.beta=c+d
 		self.beta_list.extend([self.beta])
@@ -92,7 +99,7 @@ class LAPUCB():
 		max_index=np.argmax(estimated_payoffs)
 		selected_item_index=item_pool[max_index]
 		selected_item_feature=item_fs[max_index]
-		true_payoff=self.true_payoffs[user_index, selected_item_index]
+		true_payoff=self.true_payoffs[user_index, selected_item_index]+np.random.normal(scale=self.sigma)
 		max_ideal_payoff=np.max(self.true_payoffs[user_index][item_pool])
 		regret=max_ideal_payoff-true_payoff
 		return true_payoff, selected_item_feature, regret, x_norm, ucb

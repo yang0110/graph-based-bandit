@@ -5,10 +5,11 @@ from scipy.sparse import csgraph
 import scipy
 
 class GOB():
-	def __init__(self, dimension, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, true_adj, true_lap, alpha, delta, sigma, b, state):
+	def __init__(self, dimension,iteration, user_num, item_num, pool_size, item_feature_matrix, true_user_feature_matrix, true_payoffs, true_adj, true_lap, alpha, delta, sigma, b, state):
 		self.true_adj=true_adj
 		self.state=state
 		self.dimension=dimension
+		self.iteration=iteration
 		self.user_num=user_num
 		self.item_num=item_num
 		self.pool_size=pool_size
@@ -31,6 +32,7 @@ class GOB():
 		self.alpha=alpha
 		self.delta=delta
 		self.sigma=sigma
+		self.beta=0
 		self.b=b
 		self.covariance=np.identity(self.user_num*self.dimension)
 		self.bias=np.zeros(self.user_num*self.dimension)
@@ -91,7 +93,7 @@ class GOB():
 		max_index=np.argmax(estimated_payoffs)
 		selected_item_index=item_pool[max_index]
 		selected_item_feature=item_fs[max_index]
-		true_payoff=self.true_payoffs[user_index, selected_item_index]
+		true_payoff=self.true_payoffs[user_index, selected_item_index]+np.random.normal(scale=self.sigma)
 		max_ideal_payoff=np.max(self.true_payoffs[user_index][item_pool])
 		regret=max_ideal_payoff-true_payoff
 		return true_payoff, selected_item_feature, regret, x_norm, ucb
